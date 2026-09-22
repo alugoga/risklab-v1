@@ -1,0 +1,57 @@
+{
+  "fecha": "2026-08-31",
+  "periodo": "AGOSTO 2026",
+
+  "cartera": {
+    "valorMercado": 33226,
+    "montoInversion": 31494,
+    "volatilidad": 5.6296,
+    "duracion": 9.0405,
+    "convexidad": 138.1517,
+    "plazoPromedio": 5000
+  },
+
+  "riesgo": {
+    "var": 0.8709,
+    "varMdp": 289.37,
+    "varIndividual": 1.0866,
+    "varIndividualMdp": 361.04,
+    "cvar": 0.9522,
+    "cvarMdp": 316.36,
+    "limiteVar": 1.2
+  },
+
+  "carteraModificada": {
+    "valorMercado": 32696,
+    "volatilidad": 5.7122,
+    "duracion": 9.1345,
+    "convexidad": 140.0345,
+    "plazoPromedio": 5045,
+    "var": 0.8838,
+    "varMdp": 288.96,
+    "varIndividual": 1.0853,
+    "cvar": 0.9661,
+    "cvarMdp": 315.89
+  },
+
+  "portafolios": {
+    "alfa": {
+      "valorMercado": 4858,
+      "var": 0.8317,
+      "volatilidad": 5.66
+    },
+    "liquidez": {
+      "valorMercado": 413,
+      "var": 0.1895,
+      "volatilidad": 1.29
+    }
+  },
+
+  "anterior": {
+    "fecha": "2026-07-31",
+    "valorMercado": 33239,
+    "volatilidad": 5.3693,
+    "duracion": 9.1756,
+    "convexidad": 140.9676
+  }
+}

@@ -933,6 +933,572 @@
 
     }
 
+    /* =========================================================
+   RISK LAB — VISUAL POLISH
+   Overview v1
+========================================================= */
+
+/* ---------------------------------------------------------
+   GLOBAL ATMOSPHERE
+--------------------------------------------------------- */
+
+body {
+  background:
+    radial-gradient(
+      circle at 82% 8%,
+      rgba(77, 163, 255, .045),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 20% 90%,
+      rgba(79, 209, 139, .025),
+      transparent 30%
+    ),
+    var(--bg);
+}
+
+
+/* ---------------------------------------------------------
+   SIDEBAR
+--------------------------------------------------------- */
+
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      #0a0f15 0%,
+      #080d13 100%
+    );
+}
+
+.brand {
+  background: rgba(255,255,255,.008);
+}
+
+.brand-mark {
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(77,163,255,.05),
+    0 0 18px rgba(77,163,255,.06);
+}
+
+.brand-name {
+  letter-spacing: .025em;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-item.active {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(77,163,255,.11),
+      rgba(77,163,255,.025)
+    );
+
+  border: 1px solid rgba(77,163,255,.10);
+}
+
+.nav-item.active::before {
+  content: "";
+
+  position: absolute;
+  left: -1px;
+  top: 7px;
+  bottom: 7px;
+
+  width: 2px;
+
+  background: var(--accent);
+
+  box-shadow:
+    0 0 8px rgba(77,163,255,.55);
+}
+
+
+/* ---------------------------------------------------------
+   TOPBAR
+--------------------------------------------------------- */
+
+.topbar {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.015),
+    0 8px 30px rgba(0,0,0,.12);
+}
+
+.page-title {
+  letter-spacing: -.015em;
+}
+
+.data-status {
+  padding: 6px 9px;
+
+  border: 1px solid rgba(79,209,139,.12);
+  border-radius: 5px;
+
+  background: rgba(79,209,139,.025);
+}
+
+.data-status .status-dot {
+  width: 5px;
+  height: 5px;
+
+  box-shadow:
+    0 0 7px rgba(79,209,139,.7);
+}
+
+
+/* ---------------------------------------------------------
+   CONTENT
+--------------------------------------------------------- */
+
+.content {
+  width: 100%;
+}
+
+
+/* ---------------------------------------------------------
+   SECTION HEADERS
+--------------------------------------------------------- */
+
+.section-header {
+  margin-top: 4px;
+}
+
+.section-title {
+  color: #a8b4c0;
+
+  font-weight: 500;
+
+  letter-spacing: .14em;
+}
+
+.section-date {
+  color: #72808d;
+
+  padding: 3px 7px;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+
+  background: rgba(255,255,255,.012);
+}
+
+
+/* ---------------------------------------------------------
+   CORE METRICS
+--------------------------------------------------------- */
+
+.metric {
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.018),
+      transparent 55%
+    ),
+    var(--panel);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.012),
+    0 5px 20px rgba(0,0,0,.08);
+}
+
+.metric::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 1px;
+
+  background: rgba(255,255,255,.035);
+}
+
+.metric:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.02),
+    0 8px 24px rgba(0,0,0,.14);
+}
+
+.metrics-grid .metric:nth-child(1)::after,
+.metrics-grid .metric:nth-child(3)::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 42px;
+  height: 1px;
+
+  background: rgba(77,163,255,.65);
+
+  box-shadow:
+    0 0 10px rgba(77,163,255,.2);
+}
+
+.metrics-grid .metric:nth-child(2)::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 42px;
+  height: 1px;
+
+  background: var(--yellow);
+
+  box-shadow:
+    0 0 10px rgba(232,189,92,.18);
+}
+
+.metrics-grid .metric:nth-child(4)::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 42px;
+  height: 1px;
+
+  background: var(--red);
+
+  box-shadow:
+    0 0 10px rgba(239,107,115,.15);
+}
+
+.metric-label {
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+
+.metric-value {
+  font-size: 27px;
+  letter-spacing: -.035em;
+}
+
+.metric-unit {
+  color: #71808e;
+  font-size: 12px;
+}
+
+.metric-secondary {
+  color: #687683;
+
+  border-top: 1px solid rgba(255,255,255,.025);
+
+  padding-top: 8px;
+}
+
+
+/* ---------------------------------------------------------
+   SECONDARY METRICS
+--------------------------------------------------------- */
+
+.secondary-grid .metric {
+  min-height: 90px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.012),
+      transparent 60%
+    ),
+    #0f161e;
+}
+
+.secondary-grid .metric-value {
+  color: #cbd4dc;
+  font-size: 19px;
+}
+
+
+/* ---------------------------------------------------------
+   RISK LIMIT
+--------------------------------------------------------- */
+
+.risk-panel {
+  position: relative;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(232,189,92,.025),
+      transparent 55%
+    ),
+    var(--panel);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.012),
+    0 6px 24px rgba(0,0,0,.10);
+}
+
+.risk-panel::before {
+  content: "RISK CONTROL";
+
+  position: absolute;
+
+  top: 8px;
+  right: 12px;
+
+  color: #4e5964;
+
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 7px;
+
+  letter-spacing: .12em;
+}
+
+.risk-current {
+  font-weight: 600;
+
+  text-shadow:
+    0 0 10px rgba(232,189,92,.12);
+}
+
+.risk-bar {
+  height: 7px;
+
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #18212a 0,
+      #18212a calc(10% - 1px),
+      #202a34 calc(10% - 1px),
+      #202a34 10%
+    );
+}
+
+.risk-progress {
+  height: 7px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #d7a942,
+      var(--yellow)
+    );
+
+  box-shadow:
+    0 0 10px rgba(232,189,92,.18);
+}
+
+.risk-marker {
+  width: 1px;
+
+  background: var(--red);
+
+  box-shadow:
+    0 0 7px rgba(239,107,115,.45);
+}
+
+.risk-footer {
+  color: #5f6b76;
+}
+
+
+/* ---------------------------------------------------------
+   CHART PANELS
+--------------------------------------------------------- */
+
+.chart-panel {
+  position: relative;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.015),
+      transparent 60%
+    ),
+    var(--panel);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.012),
+    0 6px 24px rgba(0,0,0,.08);
+}
+
+.chart-header {
+  background: rgba(255,255,255,.008);
+}
+
+.chart-title {
+  color: #a0acb7;
+}
+
+.chart-meta {
+  padding: 3px 6px;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+
+  background: rgba(255,255,255,.012);
+
+  font-size: 8px;
+}
+
+.chart-placeholder {
+  height: 210px;
+
+  border-color: #1b252e;
+
+  background:
+    linear-gradient(
+      to right,
+      transparent 24%,
+      rgba(32,42,52,.45) 25%,
+      transparent 25%,
+      transparent 49%,
+      rgba(32,42,52,.45) 50%,
+      transparent 50%,
+      transparent 74%,
+      rgba(32,42,52,.45) 75%,
+      transparent 75%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 24%,
+      rgba(32,42,52,.45) 25%,
+      transparent 25%,
+      transparent 49%,
+      rgba(32,42,52,.45) 50%,
+      transparent 50%,
+      transparent 74%,
+      rgba(32,42,52,.45) 75%,
+      transparent 75%
+    );
+}
+
+.placeholder-message {
+  color: #4e5b67;
+
+  font-size: 9px;
+
+  letter-spacing: .08em;
+}
+
+
+/* ---------------------------------------------------------
+   MARKET PULSE
+--------------------------------------------------------- */
+
+.pulse-panel {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.012),
+      transparent 60%
+    ),
+    var(--panel);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.012),
+    0 6px 24px rgba(0,0,0,.08);
+}
+
+.pulse-header {
+  background: rgba(255,255,255,.008);
+}
+
+.pulse-item {
+  position: relative;
+
+  transition:
+    background .15s ease;
+}
+
+.pulse-item:hover {
+  background: rgba(255,255,255,.012);
+}
+
+.pulse-value {
+  color: #d6dee5;
+}
+
+.pulse-change {
+  font-size: 9px;
+}
+
+.pulse-change.positive::before {
+  content: "▲ ";
+
+  font-size: 7px;
+}
+
+.pulse-change.negative::before {
+  content: "▼ ";
+
+  font-size: 7px;
+}
+
+
+/* ---------------------------------------------------------
+   SCROLLBAR
+--------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080c11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #202a34;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2b3743;
+}
+
+
+/* ---------------------------------------------------------
+   RESPONSIVE POLISH
+--------------------------------------------------------- */
+
+@media (min-width: 1500px) {
+
+  .content {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+
+  .metric-value {
+    font-size: 29px;
+  }
+
+}
+
+@media (max-width: 800px) {
+
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .data-status {
+    padding: 5px 7px;
+  }
+
+}
+
   </style>
 
 </head>
@@ -1042,7 +1608,7 @@
     </div>
 
     <div class="sync-label">
-      G00 · LAST SYNC
+      DATOS LOCALES - AGOSTO
     </div>
 
   </div>
@@ -1084,7 +1650,7 @@
         <span class="status-dot"></span>
 
         <span>
-          LIVE DATA
+          DATA ONLINE
         </span>
 
       </div>

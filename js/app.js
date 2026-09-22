@@ -1,24 +1,55 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
-    try {
+```
+console.log("=================================");
+console.log("RISK LAB");
+console.log("DOM cargado");
+console.log("=================================");
 
-        const data = await cargarDatos();
+try {
 
-        renderOverview(data);
+    console.log("Intentando cargar overview.json...");
 
-        console.log("Risk Lab iniciado correctamente.");
-        console.log("Datos:", data);
+    const data = await cargarDatos();
 
-    } catch (error) {
+    console.log("JSON cargado correctamente:");
+    console.log(data);
 
-        console.error("Error iniciando Risk Lab:", error);
+    renderOverview(data);
 
-        const status = document.getElementById("system-status");
+    console.log("Dashboard renderizado correctamente.");
 
-        if (status) {
-            status.textContent = "DATA ERROR";
-            status.classList.add("error");
-        }
+} catch (error) {
+
+    console.error(
+        "ERROR INICIANDO RISK LAB:",
+        error
+    );
+
+    const statusText =
+        document.querySelector(
+            ".sidebar-bottom .system-status span:last-child"
+        );
+
+    if (statusText) {
+        statusText.textContent = "DATA ERROR";
     }
+
+    const statusDot =
+        document.querySelector(
+            ".sidebar-bottom .status-dot"
+        );
+
+    if (statusDot) {
+
+        statusDot.style.background =
+            "#ef6b73";
+
+        statusDot.style.boxShadow =
+            "0 0 7px rgba(239, 107, 115, .45)";
+    }
+
+}
+```
 
 });

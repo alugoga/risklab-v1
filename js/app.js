@@ -1,43 +1,41 @@
 document.addEventListener("DOMContentLoaded", async function () {
 
-```
-console.log("RISK LAB: DOM cargado");
+    console.log("RISK LAB: DOM cargado");
 
-try {
+    try {
 
-    console.log("RISK LAB: cargando datos...");
+        console.log("RISK LAB: cargando datos...");
 
-    const data = await cargarDatos();
+        const data = await cargarDatos();
 
-    console.log("RISK LAB: datos recibidos", data);
+        console.log("RISK LAB: datos recibidos", data);
 
-    renderOverview(data);
+        renderOverview(data);
 
-    console.log("RISK LAB: dashboard renderizado");
+        console.log("RISK LAB: dashboard renderizado");
 
-} catch (error) {
+    } catch (error) {
 
-    console.error("RISK LAB: error", error);
+        console.error("RISK LAB: error", error);
 
-    const statusText = document.querySelector(
-        ".sidebar-bottom .system-status span:last-child"
-    );
+        const statusText = document.querySelector(
+            ".sidebar-bottom .system-status span:last-child"
+        );
 
-    if (statusText) {
-        statusText.textContent = "DATA ERROR";
+        if (statusText) {
+            statusText.textContent = "DATA ERROR";
+        }
+
+        const statusDot = document.querySelector(
+            ".sidebar-bottom .status-dot"
+        );
+
+        if (statusDot) {
+            statusDot.style.background = "#ef6b73";
+            statusDot.style.boxShadow =
+                "0 0 7px rgba(239, 107, 115, .45)";
+        }
+
     }
-
-    const statusDot = document.querySelector(
-        ".sidebar-bottom .status-dot"
-    );
-
-    if (statusDot) {
-        statusDot.style.background = "#ef6b73";
-        statusDot.style.boxShadow =
-            "0 0 7px rgba(239, 107, 115, .45)";
-    }
-
-}
-```
 
 });

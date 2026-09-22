@@ -1,1 +1,1619 @@
+<!DOCTYPE html>
 
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Risk Lab</title>
+
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+
+    /* =========================================================
+       ROOT
+    ========================================================= */
+
+    :root {
+      --bg: #080c11;
+      --bg-soft: #0d1218;
+      --panel: #111820;
+      --panel-hover: #151e27;
+
+      --border: #202a34;
+      --border-soft: #18212a;
+
+      --text: #e7edf3;
+      --text-soft: #94a1ae;
+      --text-muted: #65727f;
+
+      --accent: #4da3ff;
+      --green: #4fd18b;
+      --yellow: #e8bd5c;
+      --red: #ef6b73;
+
+      --sidebar-width: 235px;
+
+      --radius: 8px;
+    }
+
+
+    /* =========================================================
+       RESET
+    ========================================================= */
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+
+      font-family: "Inter", sans-serif;
+
+      font-size: 14px;
+      line-height: 1.5;
+
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+
+    /* =========================================================
+       APP LAYOUT
+    ========================================================= */
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+    }
+
+
+    /* =========================================================
+       SIDEBAR
+    ========================================================= */
+
+    .sidebar {
+      position: fixed;
+
+      top: 0;
+      left: 0;
+      bottom: 0;
+
+      width: var(--sidebar-width);
+
+      background: #090e14;
+
+      border-right: 1px solid var(--border);
+
+      display: flex;
+      flex-direction: column;
+
+      z-index: 100;
+    }
+
+
+    /* Brand */
+
+    .brand {
+      height: 72px;
+
+      display: flex;
+      align-items: center;
+
+      padding: 0 22px;
+
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+
+      border: 1px solid var(--accent);
+
+      border-radius: 6px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: var(--accent);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 13px;
+      font-weight: 600;
+
+      margin-right: 11px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 600;
+
+      letter-spacing: .02em;
+    }
+
+    .brand-sub {
+      font-family: "IBM Plex Mono", monospace;
+
+      color: var(--text-muted);
+
+      font-size: 9px;
+
+      letter-spacing: .08em;
+
+      margin-top: 1px;
+    }
+
+
+    /* Navigation */
+
+    .nav {
+      padding: 20px 12px;
+    }
+
+    .nav-section {
+      margin-bottom: 22px;
+    }
+
+    .nav-title {
+      padding: 0 11px 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .12em;
+
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      height: 36px;
+
+      display: flex;
+      align-items: center;
+
+      padding: 0 11px;
+
+      margin-bottom: 2px;
+
+      border-radius: 6px;
+
+      color: var(--text-soft);
+
+      cursor: pointer;
+
+      transition:
+        background .15s ease,
+        color .15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--panel);
+
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: #111b25;
+
+      color: var(--text);
+    }
+
+    .nav-icon {
+      width: 20px;
+
+      margin-right: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 12px;
+
+      text-align: center;
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--accent);
+    }
+
+
+    /* Sidebar bottom */
+
+    .sidebar-bottom {
+      margin-top: auto;
+
+      padding: 16px;
+
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+
+      gap: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .05em;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+
+      background: var(--green);
+
+      box-shadow: 0 0 7px rgba(79, 209, 139, .45);
+    }
+
+    .sync-label {
+      margin-top: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 8px;
+    }
+
+
+    /* =========================================================
+       MAIN
+    ========================================================= */
+
+    .main {
+      margin-left: var(--sidebar-width);
+
+      width: calc(100% - var(--sidebar-width));
+
+      min-height: 100vh;
+    }
+
+
+    /* =========================================================
+       TOPBAR
+    ========================================================= */
+
+    .topbar {
+      height: 72px;
+
+      padding: 0 30px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      border-bottom: 1px solid var(--border-soft);
+
+      background: rgba(8, 12, 17, .92);
+
+      position: sticky;
+      top: 0;
+
+      z-index: 50;
+
+      backdrop-filter: blur(10px);
+    }
+
+    .page-title {
+      font-size: 17px;
+
+      font-weight: 600;
+
+      letter-spacing: -.01em;
+    }
+
+    .page-subtitle {
+      margin-top: 2px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+
+      gap: 20px;
+    }
+
+    .data-status {
+      display: flex;
+      align-items: center;
+
+      gap: 7px;
+
+      color: var(--green);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+    }
+
+
+    /* =========================================================
+       CONTENT
+    ========================================================= */
+
+    .content {
+      padding: 30px;
+      max-width: 1600px;
+    }
+
+
+    /* =========================================================
+       SECTION HEADER
+    ========================================================= */
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .12em;
+    }
+
+    .section-date {
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+    }
+
+
+    /* =========================================================
+       METRICS
+    ========================================================= */
+
+    .metrics-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+      gap: 12px;
+
+      margin-bottom: 12px;
+    }
+
+    .metric {
+      background: var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      padding: 18px 19px;
+
+      min-height: 126px;
+
+      transition:
+        border-color .15s ease,
+        background .15s ease;
+    }
+
+    .metric:hover {
+      background: var(--panel-hover);
+
+      border-color: #2b3743;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .09em;
+
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      color: var(--text);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 25px;
+
+      font-weight: 500;
+
+      line-height: 1.1;
+
+      letter-spacing: -.02em;
+    }
+
+    .metric-unit {
+      color: var(--text-soft);
+
+      font-size: 13px;
+
+      margin-left: 3px;
+    }
+
+    .metric-secondary {
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      margin-top: 9px;
+    }
+
+
+    /* =========================================================
+       SECONDARY METRICS
+    ========================================================= */
+
+    .secondary-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+      gap: 12px;
+
+      margin-bottom: 28px;
+    }
+
+    .secondary-grid .metric {
+      min-height: 95px;
+
+      padding: 15px 18px;
+    }
+
+    .secondary-grid .metric-label {
+      margin-bottom: 8px;
+    }
+
+    .secondary-grid .metric-value {
+      font-size: 18px;
+    }
+
+
+    /* =========================================================
+       RISK LIMIT
+    ========================================================= */
+
+    .risk-panel {
+      background: var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      padding: 19px 20px;
+
+      margin-bottom: 28px;
+    }
+
+    .risk-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      margin-bottom: 17px;
+    }
+
+    .risk-title {
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .1em;
+    }
+
+    .risk-values {
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 11px;
+    }
+
+    .risk-current {
+      color: var(--yellow);
+    }
+
+    .risk-limit {
+      color: var(--text);
+    }
+
+    .risk-bar {
+      height: 5px;
+
+      width: 100%;
+
+      background: #1a222b;
+
+      border-radius: 5px;
+
+      position: relative;
+
+      overflow: visible;
+    }
+
+    .risk-progress {
+      position: absolute;
+
+      left: 0;
+      top: 0;
+
+      height: 5px;
+
+      width: 72.6%;
+
+      background: var(--yellow);
+
+      border-radius: 5px;
+
+      transition: width .4s ease;
+    }
+
+    .risk-marker {
+      position: absolute;
+
+      top: -4px;
+
+      left: 100%;
+
+      width: 2px;
+      height: 13px;
+
+      background: var(--red);
+
+      transform: translateX(-1px);
+    }
+
+    .risk-footer {
+      display: flex;
+
+      justify-content: space-between;
+
+      margin-top: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+    }
+
+
+    /* =========================================================
+       CHARTS
+    ========================================================= */
+
+    .charts-grid {
+      display: grid;
+
+      grid-template-columns:
+        1.45fr 1fr;
+
+      gap: 12px;
+
+      margin-bottom: 28px;
+    }
+
+    .chart-panel {
+      background: var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      min-height: 300px;
+
+      overflow: hidden;
+    }
+
+    .chart-header {
+      height: 56px;
+
+      padding: 0 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .chart-title {
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .08em;
+    }
+
+    .chart-meta {
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+    }
+
+    .chart-body {
+      min-height: 244px;
+
+      padding: 18px;
+    }
+
+    .chart-placeholder {
+      width: 100%;
+      height: 210px;
+
+      position: relative;
+
+      border-bottom: 1px solid var(--border-soft);
+      border-left: 1px solid var(--border-soft);
+
+      background:
+        linear-gradient(
+          to bottom,
+          transparent 24%,
+          var(--border-soft) 25%,
+          transparent 25%,
+          transparent 49%,
+          var(--border-soft) 50%,
+          transparent 50%,
+          transparent 74%,
+          var(--border-soft) 75%,
+          transparent 75%
+        );
+    }
+
+    .placeholder-message {
+      position: absolute;
+
+      inset: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+    }
+
+
+    /* =========================================================
+       MARKET PULSE
+    ========================================================= */
+
+    .pulse-panel {
+      background: var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      overflow: hidden;
+
+      margin-bottom: 28px;
+    }
+
+    .pulse-header {
+      height: 54px;
+
+      padding: 0 18px;
+
+      display: flex;
+      align-items: center;
+
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .pulse-title {
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .09em;
+    }
+
+    .pulse-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, 1fr);
+    }
+
+    .pulse-item {
+      padding: 17px 18px;
+
+      border-right: 1px solid var(--border-soft);
+    }
+
+    .pulse-item:last-child {
+      border-right: none;
+    }
+
+    .pulse-label {
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      text-transform: uppercase;
+
+      margin-bottom: 7px;
+    }
+
+    .pulse-value {
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 15px;
+    }
+
+    .pulse-change {
+      margin-top: 4px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+    }
+
+    .positive {
+      color: var(--green);
+    }
+
+    .negative {
+      color: var(--red);
+    }
+
+    .neutral {
+      color: var(--text-muted);
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 1100px) {
+
+      .metrics-grid {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+
+    @media (max-width: 800px) {
+
+      :root {
+        --sidebar-width: 0px;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        margin-left: 0;
+
+        width: 100%;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .topbar {
+        padding: 0 20px;
+      }
+
+      .secondary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pulse-grid {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+
+      .pulse-item:nth-child(2) {
+        border-right: none;
+      }
+
+      .pulse-item:nth-child(-n+2) {
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+    }
+
+
+    @media (max-width: 520px) {
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pulse-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pulse-item {
+        border-right: none !important;
+
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .pulse-item:last-child {
+        border-bottom: none;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="app">
+
+```
+<!-- =======================================================
+     SIDEBAR
+======================================================== -->
+
+<aside class="sidebar">
+
+  <div class="brand">
+
+    <div class="brand-mark">
+      RL
+    </div>
+
+    <div>
+      <div class="brand-name">
+        Risk Lab
+      </div>
+
+      <div class="brand-sub">
+        MARKET &amp; RISK
+      </div>
+    </div>
+
+  </div>
+
+
+  <nav class="nav">
+
+    <div class="nav-section">
+
+      <div class="nav-title">
+        Monitor
+      </div>
+
+      <div class="nav-item active">
+        <div class="nav-icon">01</div>
+        <div>Overview</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">02</div>
+        <div>Historical</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">03</div>
+        <div>Portfolios</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">04</div>
+        <div>Risk</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">05</div>
+        <div>Contributors</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">06</div>
+        <div>Mandates</div>
+      </div>
+
+    </div>
+
+
+    <div class="nav-section">
+
+      <div class="nav-title">
+        Laboratory
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">07</div>
+        <div>Data Lab</div>
+      </div>
+
+      <div class="nav-item">
+        <div class="nav-icon">08</div>
+        <div>Snake</div>
+      </div>
+
+    </div>
+
+  </nav>
+
+
+  <div class="sidebar-bottom">
+
+    <div class="system-status">
+
+      <span class="status-dot"></span>
+
+      <span>
+        DATA ONLINE
+      </span>
+
+    </div>
+
+    <div class="sync-label">
+      G00 · LAST SYNC
+    </div>
+
+  </div>
+
+</aside>
+
+
+
+<!-- =======================================================
+     MAIN
+======================================================== -->
+
+<main class="main">
+
+
+  <!-- =====================================================
+       TOPBAR
+  ====================================================== -->
+
+  <header class="topbar">
+
+    <div>
+
+      <div class="page-title">
+        Overview
+      </div>
+
+      <div class="page-subtitle">
+        MARKET RISK MONITOR
+      </div>
+
+    </div>
+
+
+    <div class="topbar-right">
+
+      <div class="data-status">
+
+        <span class="status-dot"></span>
+
+        <span>
+          LIVE DATA
+        </span>
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- =====================================================
+       CONTENT
+  ====================================================== -->
+
+  <div class="content">
+
+
+    <!-- ===================================================
+         CORE METRICS
+    ==================================================== -->
+
+    <div class="section-header">
+
+      <div class="section-title">
+        Core metrics
+      </div>
+
+      <div
+        class="section-date"
+        id="overview-date"
+      >
+        —
+      </div>
+
+    </div>
+
+
+    <section class="metrics-grid">
+
+
+      <!-- Valor de mercado -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Valor de mercado
+        </div>
+
+        <div class="metric-value">
+
+          <span id="valor-mercado">
+            —
+          </span>
+
+          <span class="metric-unit">
+            MDP
+          </span>
+
+        </div>
+
+        <div
+          class="metric-secondary"
+          id="valor-mercado-secondary"
+        >
+          —
+        </div>
+
+      </div>
+
+
+
+      <!-- VaR -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          VaR
+        </div>
+
+        <div class="metric-value">
+
+          <span id="var">
+            —
+          </span>
+
+          <span class="metric-unit">
+            %
+          </span>
+
+        </div>
+
+        <div
+          class="metric-secondary"
+          id="var-mdp"
+        >
+          —
+        </div>
+
+      </div>
+
+
+
+      <!-- Volatilidad -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Volatilidad
+        </div>
+
+        <div class="metric-value">
+
+          <span id="volatilidad">
+            —
+          </span>
+
+          <span class="metric-unit">
+            %
+          </span>
+
+        </div>
+
+        <div class="metric-secondary">
+          Histórica
+        </div>
+
+      </div>
+
+
+
+      <!-- CVaR -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          CVaR
+        </div>
+
+        <div class="metric-value">
+
+          <span id="cvar">
+            —
+          </span>
+
+          <span class="metric-unit">
+            %
+          </span>
+
+        </div>
+
+        <div
+          class="metric-secondary"
+          id="cvar-mdp"
+        >
+          —
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         SECONDARY METRICS
+    ==================================================== -->
+
+    <section class="secondary-grid">
+
+
+      <!-- Monto de inversión -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Monto de inversión
+        </div>
+
+        <div class="metric-value">
+
+          <span id="monto-inversion">
+            —
+          </span>
+
+          <span class="metric-unit">
+            MDP
+          </span>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Duración -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Duración
+        </div>
+
+        <div class="metric-value">
+
+          <span id="duracion">
+            —
+          </span>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Convexidad -->
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Convexidad
+        </div>
+
+        <div class="metric-value">
+
+          <span id="convexidad">
+            —
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         RISK LIMIT
+    ==================================================== -->
+
+    <section class="risk-panel">
+
+
+      <div class="risk-header">
+
+        <div class="risk-title">
+          VaR / Límite de política
+        </div>
+
+        <div class="risk-values">
+
+          <span
+            class="risk-current"
+            id="risk-current"
+          >
+            —
+          </span>
+
+          /
+
+          <span
+            class="risk-limit"
+            id="risk-limit"
+          >
+            —
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="risk-bar">
+
+        <div
+          class="risk-progress"
+          id="risk-progress"
+        ></div>
+
+        <div class="risk-marker"></div>
+
+      </div>
+
+
+      <div class="risk-footer">
+
+        <span>
+          0%
+        </span>
+
+        <span id="risk-utilization">
+          UTILIZACIÓN —
+        </span>
+
+        <span id="risk-limit-footer">
+          —
+        </span>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         CHARTS
+    ==================================================== -->
+
+    <div class="section-header">
+
+      <div class="section-title">
+        Market profile
+      </div>
+
+    </div>
+
+
+    <section class="charts-grid">
+
+
+      <!-- Valor de mercado histórico -->
+
+      <div class="chart-panel">
+
+        <div class="chart-header">
+
+          <div class="chart-title">
+            Valor de mercado histórico
+          </div>
+
+          <div class="chart-meta">
+            HISTORICAL
+          </div>
+
+        </div>
+
+        <div class="chart-body">
+
+          <div class="chart-placeholder">
+
+            <div class="placeholder-message">
+              CHART · DATA SOURCE PENDING
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Perfil de riesgo -->
+
+      <div class="chart-panel">
+
+        <div class="chart-header">
+
+          <div class="chart-title">
+            Perfil de riesgo
+          </div>
+
+          <div class="chart-meta">
+            VOLATILITY
+          </div>
+
+        </div>
+
+        <div class="chart-body">
+
+          <div class="chart-placeholder">
+
+            <div class="placeholder-message">
+              CHART · DATA SOURCE PENDING
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         MARKET PULSE
+    ==================================================== -->
+
+    <section class="pulse-panel">
+
+
+      <div class="pulse-header">
+
+        <div class="pulse-title">
+          Market pulse
+        </div>
+
+      </div>
+
+
+      <div class="pulse-grid">
+
+
+        <!-- VM -->
+
+        <div class="pulse-item">
+
+          <div class="pulse-label">
+            VM vs cierre anterior
+          </div>
+
+          <div
+            class="pulse-value"
+            id="pulse-vm"
+          >
+            —
+          </div>
+
+          <div
+            class="pulse-change"
+            id="pulse-vm-change"
+          >
+            —
+          </div>
+
+        </div>
+
+
+
+        <!-- Volatilidad -->
+
+        <div class="pulse-item">
+
+          <div class="pulse-label">
+            Volatilidad
+          </div>
+
+          <div
+            class="pulse-value"
+            id="pulse-vol"
+          >
+            —
+          </div>
+
+          <div
+            class="pulse-change"
+            id="pulse-vol-change"
+          >
+            —
+          </div>
+
+        </div>
+
+
+
+        <!-- Duración -->
+
+        <div class="pulse-item">
+
+          <div class="pulse-label">
+            Duración
+          </div>
+
+          <div
+            class="pulse-value"
+            id="pulse-duration"
+          >
+            —
+          </div>
+
+          <div
+            class="pulse-change"
+            id="pulse-duration-change"
+          >
+            —
+          </div>
+
+        </div>
+
+
+
+        <!-- Convexidad -->
+
+        <div class="pulse-item">
+
+          <div class="pulse-label">
+            Convexidad
+          </div>
+
+          <div
+            class="pulse-value"
+            id="pulse-convexity"
+          >
+            —
+          </div>
+
+          <div
+            class="pulse-change"
+            id="pulse-convexity-change"
+          >
+            —
+          </div>
+
+        </div>
+
+
+      </div>
+
+    </section>
+
+
+  </div>
+
+</main>
+```
+
+  </div>
+
+  <!-- =========================================================
+       JAVASCRIPT
+  ========================================================== -->
+
+  <script src="./js/data.js"></script>
+
+  <script src="./js/overview.js"></script>
+
+  <script src="./js/app.js"></script>
+
+</body>
+</html>

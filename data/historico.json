@@ -1,0 +1,40 @@
+{
+  "serie": [
+    {
+      "fecha": "2026-03-31",
+      "valorMercado": 32874,
+      "volatilidad": 5.1842,
+      "var": 0.8421
+    },
+    {
+      "fecha": "2026-04-30",
+      "valorMercado": 32918,
+      "volatilidad": 5.2478,
+      "var": 0.8517
+    },
+    {
+      "fecha": "2026-05-31",
+      "valorMercado": 33046,
+      "volatilidad": 5.3915,
+      "var": 0.8632
+    },
+    {
+      "fecha": "2026-06-30",
+      "valorMercado": 33112,
+      "volatilidad": 5.4286,
+      "var": 0.8589
+    },
+    {
+      "fecha": "2026-07-31",
+      "valorMercado": 33239,
+      "volatilidad": 5.3693,
+      "var": 0.8650
+    },
+    {
+      "fecha": "2026-08-31",
+      "valorMercado": 33226,
+      "volatilidad": 5.6296,
+      "var": 0.8709
+    }
+  ]
+}

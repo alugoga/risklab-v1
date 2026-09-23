@@ -476,3 +476,140 @@ function actualizarCambio(
         );
     }
 }
+
+function renderMarketValueChart(historico) {
+
+    const canvas = document.getElementById(
+        "market-value-chart"
+    );
+
+    if (!canvas) {
+        console.warn(
+            "RISK LAB: no existe #market-value-chart"
+        );
+        return;
+    }
+
+    if (
+        !historico ||
+        !Array.isArray(historico.serie)
+    ) {
+        console.warn(
+            "RISK LAB: datos históricos no disponibles"
+        );
+        return;
+    }
+
+    const labels = historico.serie.map(item => {
+
+        const fecha = new Date(
+            item.fecha + "T00:00:00"
+        );
+
+        return fecha.toLocaleDateString(
+            "es-MX",
+            {
+                month: "short",
+                year: "2-digit"
+            }
+        ).replace(".", "");
+    });
+
+    const valores = historico.serie.map(
+        item => item.valorMercado
+    );
+
+    new Chart(canvas, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+                {
+                    label: "Valor de mercado",
+
+                    data: valores,
+
+                    tension: 0.35,
+
+                    borderWidth: 2,
+
+                    pointRadius: 3,
+
+                    pointHoverRadius: 5,
+
+                    fill: false
+                }
+            ]
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            return (
+                                " " +
+                                formatoNumero(
+                                    context.parsed.y
+                                ) +
+                                " MDP"
+                            );
+                        }
+                    }
+                }
+            },
+
+            scales: {
+
+                x: {
+
+                    grid: {
+                        display: false
+                    },
+
+                    ticks: {
+                        maxRotation: 0
+                    }
+                },
+
+                y: {
+
+                    ticks: {
+
+                        callback: function(value) {
+
+                            return formatoNumero(
+                                value,
+                                0
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+

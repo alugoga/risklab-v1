@@ -612,4 +612,163 @@ function renderMarketValueChart(historico) {
     });
 }
 
+function renderRiskProfileChart(historico) {
 
+    const canvas = document.getElementById(
+        "risk-profile-chart"
+    );
+
+    if (!canvas) {
+        console.warn(
+            "RISK LAB: no existe #risk-profile-chart"
+        );
+        return;
+    }
+
+    if (
+        !historico ||
+        !Array.isArray(historico.serie)
+    ) {
+        console.warn(
+            "RISK LAB: datos históricos no disponibles"
+        );
+        return;
+    }
+
+    const labels = historico.serie.map(item => {
+
+        const fecha = new Date(
+            item.fecha + "T00:00:00"
+        );
+
+        return fecha.toLocaleDateString(
+            "es-MX",
+            {
+                month: "short",
+                year: "2-digit"
+            }
+        ).replace(".", "");
+    });
+
+    const volatilidad = historico.serie.map(
+        item => item.volatilidad
+    );
+
+    const varHistorico = historico.serie.map(
+        item => item.var
+    );
+
+    new Chart(canvas, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+
+                {
+                    label: "Volatilidad",
+
+                    data: volatilidad,
+
+                    tension: 0.35,
+
+                    borderWidth: 2,
+
+                    pointRadius: 3,
+
+                    pointHoverRadius: 5,
+
+                    fill: false
+                },
+
+                {
+                    label: "VaR",
+
+                    data: varHistorico,
+
+                    tension: 0.35,
+
+                    borderWidth: 2,
+
+                    pointRadius: 3,
+
+                    pointHoverRadius: 5,
+
+                    fill: false
+                }
+
+            ]
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+
+            plugins: {
+
+                legend: {
+                    display: true
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            return (
+                                " " +
+                                context.dataset.label +
+                                ": " +
+                                formatoNumero(
+                                    context.parsed.y
+                                ) +
+                                "%"
+                            );
+                        }
+                    }
+                }
+            },
+
+            scales: {
+
+                x: {
+
+                    grid: {
+                        display: false
+                    },
+
+                    ticks: {
+                        maxRotation: 0
+                    }
+                },
+
+                y: {
+
+                    ticks: {
+
+                        callback: function(value) {
+
+                            return (
+                                formatoNumero(
+                                    value
+                                ) +
+                                "%"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    });
+}

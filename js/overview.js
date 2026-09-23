@@ -1,4 +1,4 @@
-const HISTORICO_URL = "./data/historico.json";
+const HISTORICO_URL = "./data/historico.json?v=3";
 
 
 function formatoNumero(valor, decimales = 2) {
@@ -41,7 +41,9 @@ async function cargarHistorico() {
 
     try {
 
-        const response = await fetch(HISTORICO_URL);
+        const response = await fetch(HISTORICO_URL, {
+    cache: "no-store"
+});
 
         if (!response.ok) {
             throw new Error(

@@ -50,6 +50,10 @@ document.addEventListener("DOMContentLoaded", async function () {
             historico
         );
 
+        renderRiskProfileChart(
+            historico
+        );
+
         console.log(
             "RISK LAB: dashboard renderizado"
         );

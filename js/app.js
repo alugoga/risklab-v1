@@ -4,34 +4,86 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     try {
 
-        console.log("RISK LAB: cargando datos...");
+        console.log(
+            "RISK LAB: cargando datos..."
+        );
 
-        const data = await cargarDatos();
+        const data =
+            await cargarDatos();
 
-        console.log("RISK LAB: datos recibidos", data);
+
+        console.log(
+            "RISK LAB: datos recibidos",
+            data
+        );
+
+
+        console.log(
+            "RISK LAB: cargando histórico..."
+        );
+
+        const historico =
+            await cargarHistorico();
+
+
+        console.log(
+            "RISK LAB: histórico recibido",
+            historico
+        );
+
 
         renderOverview(data);
 
-        console.log("RISK LAB: dashboard renderizado");
+
+        const historicoPreparado =
+            prepararHistorico(
+                historico
+            );
+
+
+        console.log(
+            "RISK LAB: histórico preparado",
+            historicoPreparado
+        );
+
+
+        console.log(
+            "RISK LAB: dashboard renderizado"
+        );
+
 
     } catch (error) {
 
-        console.error("RISK LAB: error", error);
-
-        const statusText = document.querySelector(
-            ".sidebar-bottom .system-status span:last-child"
+        console.error(
+            "RISK LAB: error",
+            error
         );
+
+
+        const statusText =
+            document.querySelector(
+                ".sidebar-bottom .system-status span:last-child"
+            );
+
 
         if (statusText) {
-            statusText.textContent = "DATA ERROR";
+
+            statusText.textContent =
+                "DATA ERROR";
         }
 
-        const statusDot = document.querySelector(
-            ".sidebar-bottom .status-dot"
-        );
+
+        const statusDot =
+            document.querySelector(
+                ".sidebar-bottom .status-dot"
+            );
+
 
         if (statusDot) {
-            statusDot.style.background = "#ef6b73";
+
+            statusDot.style.background =
+                "#ef6b73";
+
             statusDot.style.boxShadow =
                 "0 0 7px rgba(239, 107, 115, .45)";
         }

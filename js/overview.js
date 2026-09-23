@@ -1,3 +1,6 @@
+const HISTORICO_URL = "./data/historico.json";
+
+
 function formatoNumero(valor, decimales = 2) {
     return Number(valor).toLocaleString("es-MX", {
         minimumFractionDigits: decimales,
@@ -30,15 +33,60 @@ function calcularCambio(actual, anterior) {
 }
 
 
+/* =========================================================
+   CARGA DE DATOS HISTÓRICOS
+   ========================================================= */
+
+async function cargarHistorico() {
+
+    try {
+
+        const response = await fetch(HISTORICO_URL);
+
+        if (!response.ok) {
+            throw new Error(
+                `Error HTTP histórico: ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        console.log(
+            "RISK LAB: histórico recibido",
+            data
+        );
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "RISK LAB: no fue posible cargar el histórico",
+            error
+        );
+
+        throw error;
+    }
+}
+
+
+/* =========================================================
+   RENDER PRINCIPAL
+   ========================================================= */
+
 function renderOverview(data) {
 
-    /* =====================================================
-       ENCABEZADO
-    ===================================================== */
+    const fecha =
+        new Date(data.fecha + "T00:00:00");
 
-    const fecha = new Date(data.fecha + "T00:00:00");
 
-    document.getElementById("overview-date").textContent =
+    /* -----------------------------------------
+       FECHA
+       ----------------------------------------- */
+
+    document.getElementById(
+        "overview-date"
+    ).textContent =
         fecha.toLocaleDateString("es-MX", {
             day: "2-digit",
             month: "short",
@@ -46,134 +94,217 @@ function renderOverview(data) {
         }).toUpperCase();
 
 
-    /* =====================================================
+    /* -----------------------------------------
        MÉTRICAS PRINCIPALES
-    ===================================================== */
+       ----------------------------------------- */
 
-    document.getElementById("valor-mercado").textContent =
-        formatoNumero(data.cartera.valorMercado);
+    document.getElementById(
+        "valor-mercado"
+    ).textContent =
+        formatoNumero(
+            data.cartera.valorMercado
+        );
 
-    document.getElementById("valor-mercado-secondary").textContent =
+
+    document.getElementById(
+        "valor-mercado-secondary"
+    ).textContent =
         "Cierre " + data.periodo;
 
 
-    document.getElementById("var").textContent =
-        formatoNumero(data.riesgo.var);
+    document.getElementById(
+        "var"
+    ).textContent =
+        formatoNumero(
+            data.riesgo.var
+        );
 
 
-    document.getElementById("var-mdp").textContent =
-        `$${formatoNumero(data.riesgo.varMdp)} MDP`;
+    document.getElementById(
+        "var-mdp"
+    ).textContent =
+        `$${formatoNumero(
+            data.riesgo.varMdp
+        )} MDP`;
 
 
-    document.getElementById("volatilidad").textContent =
-        formatoNumero(data.cartera.volatilidad);
+    document.getElementById(
+        "volatilidad"
+    ).textContent =
+        formatoNumero(
+            data.cartera.volatilidad
+        );
 
 
-    document.getElementById("cvar").textContent =
-        formatoNumero(data.riesgo.cvar);
+    document.getElementById(
+        "cvar"
+    ).textContent =
+        formatoNumero(
+            data.riesgo.cvar
+        );
 
 
-    document.getElementById("cvar-mdp").textContent =
-        `$${formatoNumero(data.riesgo.cvarMdp)} MDP`;
+    document.getElementById(
+        "cvar-mdp"
+    ).textContent =
+        `$${formatoNumero(
+            data.riesgo.cvarMdp
+        )} MDP`;
 
 
-    /* =====================================================
+    /* -----------------------------------------
        MÉTRICAS SECUNDARIAS
-    ===================================================== */
+       ----------------------------------------- */
 
-    document.getElementById("monto-inversion").textContent =
-        formatoNumero(data.cartera.montoInversion);
-
-
-    document.getElementById("duracion").textContent =
-        formatoNumero(data.cartera.duracion, 4);
-
-
-    document.getElementById("convexidad").textContent =
-        formatoNumero(data.cartera.convexidad, 4);
+    document.getElementById(
+        "monto-inversion"
+    ).textContent =
+        formatoNumero(
+            data.cartera.montoInversion
+        );
 
 
-    /* =====================================================
-       RISK LIMIT
-    ===================================================== */
-
-    const utilizacion = calcularUtilizacion(
-        data.riesgo.var,
-        data.riesgo.limiteVar
-    );
-
-
-    document.getElementById("risk-current").textContent =
-        formatoPorcentaje(data.riesgo.var);
+    document.getElementById(
+        "duracion"
+    ).textContent =
+        formatoNumero(
+            data.cartera.duracion,
+            4
+        );
 
 
-    document.getElementById("risk-limit").textContent =
-        formatoPorcentaje(data.riesgo.limiteVar);
+    document.getElementById(
+        "convexidad"
+    ).textContent =
+        formatoNumero(
+            data.cartera.convexidad,
+            4
+        );
 
 
-    document.getElementById("risk-utilization").textContent =
-        `UTILIZACIÓN ${formatoNumero(utilizacion, 2)}%`;
+    /* -----------------------------------------
+       UTILIZACIÓN DE VaR
+       ----------------------------------------- */
+
+    const utilizacion =
+        calcularUtilizacion(
+            data.riesgo.var,
+            data.riesgo.limiteVar
+        );
 
 
-    document.getElementById("risk-limit-footer").textContent =
-        `${formatoNumero(data.riesgo.limiteVar, 2)}%`;
+    document.getElementById(
+        "risk-current"
+    ).textContent =
+        formatoPorcentaje(
+            data.riesgo.var
+        );
 
 
-    document.getElementById("risk-progress").style.width =
-        `${Math.min(utilizacion, 100)}%`;
+    document.getElementById(
+        "risk-limit"
+    ).textContent =
+        formatoPorcentaje(
+            data.riesgo.limiteVar
+        );
 
 
-    /* =====================================================
+    document.getElementById(
+        "risk-utilization"
+    ).textContent =
+        `UTILIZACIÓN ${formatoNumero(
+            utilizacion,
+            2
+        )}%`;
+
+
+    document.getElementById(
+        "risk-limit-footer"
+    ).textContent =
+        `${formatoNumero(
+            data.riesgo.limiteVar,
+            2
+        )}%`;
+
+
+    document.getElementById(
+        "risk-progress"
+    ).style.width =
+        `${Math.min(
+            utilizacion,
+            100
+        )}%`;
+
+
+    /* -----------------------------------------
+       CAMBIOS VS. CIERRE ANTERIOR
+       ----------------------------------------- */
+
+    const cambioVM =
+        calcularCambio(
+            data.cartera.valorMercado,
+            data.anterior.valorMercado
+        );
+
+
+    const cambioVol =
+        calcularCambio(
+            data.cartera.volatilidad,
+            data.anterior.volatilidad
+        );
+
+
+    const cambioDuracion =
+        calcularCambio(
+            data.cartera.duracion,
+            data.anterior.duracion
+        );
+
+
+    const cambioConvexidad =
+        calcularCambio(
+            data.cartera.convexidad,
+            data.anterior.convexidad
+        );
+
+
+    /* -----------------------------------------
        MARKET PULSE
-    ===================================================== */
+       ----------------------------------------- */
 
-    const cambioVM = calcularCambio(
-        data.cartera.valorMercado,
-        data.anterior.valorMercado
-    );
-
-
-    const cambioVol = calcularCambio(
-        data.cartera.volatilidad,
-        data.anterior.volatilidad
-    );
+    document.getElementById(
+        "pulse-vm"
+    ).textContent =
+        `${formatoNumero(
+            data.cartera.valorMercado
+        )} MDP`;
 
 
-    const cambioDuracion = calcularCambio(
-        data.cartera.duracion,
-        data.anterior.duracion
-    );
+    document.getElementById(
+        "pulse-vol"
+    ).textContent =
+        formatoPorcentaje(
+            data.cartera.volatilidad
+        );
 
 
-    const cambioConvexidad = calcularCambio(
-        data.cartera.convexidad,
-        data.anterior.convexidad
-    );
+    document.getElementById(
+        "pulse-duration"
+    ).textContent =
+        formatoNumero(
+            data.cartera.duracion,
+            4
+        );
 
 
-    /* -----------------------------------------------------
-       Valores actuales
-    ----------------------------------------------------- */
+    document.getElementById(
+        "pulse-convexity"
+    ).textContent =
+        formatoNumero(
+            data.cartera.convexidad,
+            4
+        );
 
-    document.getElementById("pulse-vm").textContent =
-        `${formatoNumero(data.cartera.valorMercado)} MDP`;
-
-
-    document.getElementById("pulse-vol").textContent =
-        `${formatoPorcentaje(data.cartera.volatilidad)}`;
-
-
-    document.getElementById("pulse-duration").textContent =
-        formatoNumero(data.cartera.duracion, 4);
-
-
-    document.getElementById("pulse-convexity").textContent =
-        formatoNumero(data.cartera.convexidad, 4);
-
-
-    /* -----------------------------------------------------
-       Cambios
-    ----------------------------------------------------- */
 
     actualizarCambio(
         "pulse-vm-change",
@@ -199,27 +330,85 @@ function renderOverview(data) {
     );
 
 
-    /* -----------------------------------------------------
-       Consola
-    ----------------------------------------------------- */
-
     console.log(
         "Utilización VaR:",
-        formatoNumero(utilizacion, 2) + "%"
+        formatoNumero(
+            utilizacion,
+            2
+        ) + "%"
     );
+}
 
+
+/* =========================================================
+   PREPARACIÓN DEL HISTÓRICO
+   ========================================================= */
+
+function prepararHistorico(historico) {
+
+    if (
+        !historico ||
+        !Array.isArray(historico.serie)
+    ) {
+
+        console.warn(
+            "RISK LAB: estructura histórica no válida"
+        );
+
+        return null;
+    }
+
+
+    const fechas =
+        historico.serie.map(
+            item => item.fecha
+        );
+
+
+    const valorMercado =
+        historico.serie.map(
+            item => item.valorMercado
+        );
+
+
+    const volatilidad =
+        historico.serie.map(
+            item => item.volatilidad
+        );
+
+
+    const varHistorico =
+        historico.serie.map(
+            item => item.var
+        );
+
+
+    return {
+        fechas,
+        valorMercado,
+        volatilidad,
+        var: varHistorico
+    };
 }
 
 
 /* =========================================================
    ACTUALIZAR CAMBIO
-========================================================= */
+   ========================================================= */
 
-function actualizarCambio(elementId, cambio) {
+function actualizarCambio(
+    elementId,
+    cambio
+) {
 
-    const elemento = document.getElementById(elementId);
+    const elemento =
+        document.getElementById(
+            elementId
+        );
+
 
     if (!elemento) {
+
         console.warn(
             `No existe el elemento #${elementId}`
         );
@@ -238,17 +427,25 @@ function actualizarCambio(elementId, cambio) {
             "neutral"
         );
 
-        elemento.classList.add("neutral");
+        elemento.classList.add(
+            "neutral"
+        );
 
         return;
     }
 
 
-    const signo = cambio > 0 ? "+" : "";
+    const signo =
+        cambio > 0
+            ? "+"
+            : "";
 
 
     elemento.textContent =
-        `${signo}${formatoNumero(cambio, 2)}%`;
+        `${signo}${formatoNumero(
+            cambio,
+            2
+        )}%`;
 
 
     elemento.classList.remove(
@@ -260,16 +457,20 @@ function actualizarCambio(elementId, cambio) {
 
     if (cambio > 0) {
 
-        elemento.classList.add("positive");
+        elemento.classList.add(
+            "positive"
+        );
 
     } else if (cambio < 0) {
 
-        elemento.classList.add("negative");
+        elemento.classList.add(
+            "negative"
+        );
 
     } else {
 
-        elemento.classList.add("neutral");
-
+        elemento.classList.add(
+            "neutral"
+        );
     }
-
 }

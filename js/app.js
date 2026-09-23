@@ -46,6 +46,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             historicoPreparado
         );
 
+        renderMarketValueChart(
+            historico
+        );
 
         console.log(
             "RISK LAB: dashboard renderizado"

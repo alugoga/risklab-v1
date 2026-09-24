@@ -96,7 +96,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
     }
-
+    
+});
 
 // ==========================================
 // NAVEGACIÓN ENTRE VISTAS
@@ -183,5 +184,3 @@ document.addEventListener(
 
     }
 );
-    
-});

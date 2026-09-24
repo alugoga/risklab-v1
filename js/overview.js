@@ -395,7 +395,43 @@ if (pulseConvexity) {
             data.cartera.convexidad
         );
 }
-    
+
+// ==========================================
+// CAMBIOS MENSUALES
+// ==========================================
+
+actualizarCambio(
+    "pulse-vm-change",
+    calcularCambio(
+        data.cartera.valorMercado,
+        data.anterior.valorMercado
+    )
+);
+
+actualizarCambio(
+    "pulse-vol-change",
+    calcularCambio(
+        data.cartera.volatilidad,
+        data.anterior.volatilidad
+    )
+);
+
+actualizarCambio(
+    "pulse-duration-change",
+    calcularCambio(
+        data.cartera.duracion,
+        data.anterior.duracion
+    )
+);
+
+actualizarCambio(
+    "pulse-convexity-change",
+    calcularCambio(
+        data.cartera.convexidad,
+        data.anterior.convexidad
+    )
+);
+  
 }
 
 

@@ -339,6 +339,17 @@ function renderOverview(data) {
             2
         ) + "%"
     );
+
+    console.log(
+    "RISK LAB: datos para pulso",
+    {
+        valorMercado: data.cartera.valorMercado,
+        volatilidad: data.cartera.volatilidad,
+        duracion: data.cartera.duracion,
+        convexidad: data.cartera.convexidad,
+        anterior: data.anterior
+    }
+);
 }
 
 

@@ -97,4 +97,91 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     }
 
+
+// ==========================================
+// NAVEGACIÓN ENTRE VISTAS
+// ==========================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const navItems =
+            document.querySelectorAll(
+                ".nav-item[data-view]"
+            );
+
+        const views =
+            document.querySelectorAll(
+                ".view"
+            );
+
+
+        navItems.forEach(
+            function (navItem) {
+
+                navItem.addEventListener(
+                    "click",
+                    function () {
+
+                        const targetView =
+                            navItem.dataset.view;
+
+
+                        // ------------------------------
+                        // Actualizar menú
+                        // ------------------------------
+
+                        navItems.forEach(
+                            function (item) {
+
+                                item.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                        navItem.classList.add(
+                            "active"
+                        );
+
+
+                        // ------------------------------
+                        // Cambiar vista
+                        // ------------------------------
+
+                        views.forEach(
+                            function (view) {
+
+                                view.style.display =
+                                    "none";
+
+                            }
+                        );
+
+
+                        const selectedView =
+                            document.getElementById(
+                                `view-${targetView}`
+                            );
+
+
+                        if (selectedView) {
+
+                            selectedView.style.display =
+                                "block";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+    }
+);
+    
 });

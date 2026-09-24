@@ -58,6 +58,96 @@ document.addEventListener("DOMContentLoaded", async function () {
             "RISK LAB: dashboard renderizado"
         );
 
+                // ==========================================
+        // NAVEGACIÓN ENTRE VISTAS
+        // ==========================================
+
+        const navItems =
+            document.querySelectorAll(
+                ".nav-item[data-view]"
+            );
+
+        const views =
+            document.querySelectorAll(
+                ".view"
+            );
+
+
+        navItems.forEach(
+            function (navItem) {
+
+                navItem.addEventListener(
+                    "click",
+                    function () {
+
+                        const targetView =
+                            navItem.getAttribute(
+                                "data-view"
+                            );
+
+
+                        console.log(
+                            "RISK LAB: navegación →",
+                            targetView
+                        );
+
+
+                        // ------------------------------
+                        // Actualizar menú
+                        // ------------------------------
+
+                        navItems.forEach(
+                            function (item) {
+
+                                item.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                        navItem.classList.add(
+                            "active"
+                        );
+
+
+                        // ------------------------------
+                        // Ocultar todas las vistas
+                        // ------------------------------
+
+                        views.forEach(
+                            function (view) {
+
+                                view.style.display =
+                                    "none";
+
+                            }
+                        );
+
+
+                        // ------------------------------
+                        // Mostrar vista seleccionada
+                        // ------------------------------
+
+                        const selectedView =
+                            document.getElementById(
+                                "view-" + targetView
+                            );
+
+
+                        if (selectedView) {
+
+                            selectedView.style.display =
+                                "block";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
 
     } catch (error) {
 

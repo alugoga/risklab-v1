@@ -350,6 +350,52 @@ function renderOverview(data) {
         anterior: data.anterior
     }
 );
+// ==========================================
+// PULSO DE MERCADO
+// ==========================================
+
+const pulseVM =
+    document.getElementById("pulse-vm");
+
+const pulseVol =
+    document.getElementById("pulse-vol");
+
+const pulseDuration =
+    document.getElementById("pulse-duration");
+
+const pulseConvexity =
+    document.getElementById("pulse-convexity");
+
+
+if (pulseVM) {
+    pulseVM.textContent =
+        formatoNumero(
+            data.cartera.valorMercado,
+            0
+        );
+}
+
+if (pulseVol) {
+    pulseVol.textContent =
+        formatoPorcentaje(
+            data.cartera.volatilidad
+        );
+}
+
+if (pulseDuration) {
+    pulseDuration.textContent =
+        formatoNumero(
+            data.cartera.duracion
+        );
+}
+
+if (pulseConvexity) {
+    pulseConvexity.textContent =
+        formatoNumero(
+            data.cartera.convexidad
+        );
+}
+    
 }
 
 

@@ -1,478 +1,2569 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RiskLab</title>
-  <link rel="icon" type="image/png" sizes="800x800" href="./assets/favicon.png?v=2">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --bg: #080c11;
-      --bg-soft: #0d1218;
-      --panel: #111820;
-      --panel-hover: #151e27;
-      --border: #202a34;
-      --border-soft: #18212a;
-      --text: #e7edf3;
-      --text-soft: #94a1ae;
-      --text-muted: #65727f;
-      --accent: #4da3ff;
-      --green: #4fd18b;
-      --yellow: #e8bd5c;
-      --red: #ef6b73;
-      --sidebar-width: 235px;
-      --radius: 8px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; min-height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: "Inter", sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      overflow-x: hidden;
-    }
-    button, input, select { font: inherit; }
-    a { color: inherit; text-decoration: none; }
-    
-    .app { min-height: 100vh; display: flex; }
-    .sidebar {
-      position: fixed; top: 0; left: 0; bottom: 0;
-      width: var(--sidebar-width);
-      background: #090e14;
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      z-index: 100;
-    }
-    .brand {
-      height: 72px; display: flex; align-items: center;
-      padding: 0 22px; border-bottom: 1px solid var(--border-soft);
-    }
-    .brand-mark {
-      width: 42px; height: 42px; display: flex;
-      align-items: center; justify-content: center;
-      flex-shrink: 0; position: relative;
-    }
-    .brand-mark img { width: 38px; height: 38px; object-fit: contain; display: block; }
-    .brand-name { font-size: 15px; font-weight: 600; letter-spacing: .025em; }
-    .brand-sub {
-      font-family: "IBM Plex Mono", monospace;
-      color: var(--text-muted); font-size: 9px;
-      letter-spacing: .08em; margin-top: 1px;
-    }
-    
-    .nav { padding: 20px 12px; }
-    .nav-section { margin-bottom: 22px; }
-    .nav-title {
-      padding: 0 11px 8px; color: var(--text-muted);
-      font-family: "IBM Plex Mono", monospace; font-size: 9px;
-      letter-spacing: .12em; text-transform: uppercase;
-    }
-    .nav-item {
-      position: relative; height: 36px; display: flex;
-      align-items: center; padding: 0 11px; margin-bottom: 2px;
-      border-radius: 6px; border: 1px solid transparent;
-      color: var(--text-soft); cursor: pointer;
-      transition: background .15s ease, color .15s ease, border-color .15s ease;
-    }
-    .nav-item:hover { background: var(--panel); color: var(--text); }
-    .nav-item.active {
-      background: linear-gradient(90deg, rgba(77,163,255,.11), rgba(77,163,255,.025));
-      color: var(--text); border-color: rgba(77,163,255,.10);
-    }
-    .nav-item.active::before {
-      content: ""; position: absolute; left: -1px; top: 7px; bottom: 7px;
-      width: 2px; background: var(--accent);
-      box-shadow: 0 0 8px rgba(77,163,255,.55);
-    }
-    .nav-icon {
-      width: 20px; margin-right: 8px; color: var(--text-muted);
-      font-family: "IBM Plex Mono", monospace; font-size: 12px; text-align: center;
-    }
-    .nav-item.active .nav-icon { color: var(--accent); }
-    
-    .sidebar-bottom { margin-top: auto; padding: 16px; border-top: 1px solid var(--border-soft); }
-    .system-status {
-      display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-      color: var(--text-muted); font-family: "IBM Plex Mono", monospace;
-      font-size: 9px; letter-spacing: .05em;
-      border: 1px solid rgba(79,209,139,.08); border-radius: 5px;
-      background: rgba(79,209,139,.018);
-    }
-    .status-dot {
-      width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 7px rgba(79,209,139,.45);
-    }
-    .sync-label {
-      margin-top: 8px; color: var(--text-muted);
-      font-family: "IBM Plex Mono", monospace; font-size: 8px; text-align: center;
-    }
-    
-    .main { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); min-height: 100vh; }
-    .topbar {
-      height: 72px; padding: 0 30px; display: flex; align-items: center;
-      justify-content: space-between; border-bottom: 1px solid var(--border-soft);
-      background: rgba(8, 12, 17, .92); position: sticky; top: 0; z-index: 50;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 1px 0 rgba(255,255,255,.015), 0 8px 30px rgba(0,0,0,.12);
-    }
-    .page-title { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
-    .page-subtitle { margin-top: 2px; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; font-size: 10px; }
-    .topbar-right { display: flex; align-items: center; gap: 20px; }
-    .data-status {
-      display: flex; align-items: center; gap: 7px; padding: 6px 9px;
-      color: var(--green); font-family: "IBM Plex Mono", monospace;
-      font-size: 9px; letter-spacing: .06em;
-      border: 1px solid rgba(79,209,139,.12); border-radius: 5px;
-      background: rgba(79,209,139,.025);
-    }
-    .data-status .status-dot { width: 5px; height: 5px; box-shadow: 0 0 7px rgba(79,209,139,.7); }
-    
-    .content { width: 100%; padding: 30px; max-width: 1600px; }
-    .view[hidden] { display: none !important; }
 
-    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 4px; margin-bottom: 16px; }
-    .section-title { color: #a8b4c0; font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .14em; }
-    .section-date { color: #72808d; padding: 3px 7px; border: 1px solid var(--border-soft); border-radius: 4px; background: rgba(255,255,255,.012); font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: .05em; }
+  <meta charset="UTF-8">
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
-    .metric {
-      position: relative; background: linear-gradient(145deg, rgba(255,255,255,.018), transparent 55%), var(--panel);
-      border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 19px; min-height: 126px; overflow: hidden;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.012), 0 5px 20px rgba(0,0,0,.08);
-      transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
-    }
-    .metric::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,.035); }
-    .metric:hover { background: var(--panel-hover); border-color: #2b3743; transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.02), 0 8px 24px rgba(0,0,0,.14); }
-    .metrics-grid .metric:nth-child(1)::after, .metrics-grid .metric:nth-child(3)::after { content: ""; position: absolute; top: 0; left: 0; width: 42px; height: 1px; background: rgba(77,163,255,.65); box-shadow: 0 0 10px rgba(77,163,255,.2); }
-    .metrics-grid .metric:nth-child(2)::after { content: ""; position: absolute; top: 0; left: 0; width: 42px; height: 1px; background: var(--yellow); box-shadow: 0 0 10px rgba(232,189,92,.18); }
-    .metrics-grid .metric:nth-child(4)::after { content: ""; position: absolute; top: 0; left: 0; width: 42px; height: 1px; background: var(--red); box-shadow: 0 0 10px rgba(239,107,115,.15); }
-    .metric-label { color: var(--text-muted); font-family: "IBM Plex Mono", monospace; font-size: 9px; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 12px; }
-    .metric-value { color: var(--text); font-family: "IBM Plex Mono", monospace; font-size: 27px; font-weight: 500; line-height: 1.1; letter-spacing: -.035em; }
-    .metric-unit { color: #71808e; font-size: 12px; margin-left: 3px; }
-    .metric-secondary { color: #687683; font-family: "IBM Plex Mono", monospace; font-size: 10px; margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.025); }
+  <meta
 
-    .secondary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
-    .secondary-grid .metric { min-height: 90px; padding: 15px 18px; background: linear-gradient(145deg, rgba(255,255,255,.012), transparent 60%), #0f161e; }
-    .secondary-grid .metric-label { margin-bottom: 8px; }
-    .secondary-grid .metric-value { color: #cbd4dc; font-size: 19px; }
-    .secondary-grid .metric-secondary { border-top: 0; padding-top: 0; }
+    name="viewport"
 
-    .risk-panel { position: relative; background: linear-gradient(90deg, rgba(232,189,92,.025), transparent 55%), var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 19px 20px; margin-bottom: 28px; box-shadow: inset 0 1px 0 rgba(255,255,255,.012), 0 6px 24px rgba(0,0,0,.10); }
-    .risk-panel::before { content: "CONTROL DE RIESGO"; position: absolute; top: 8px; right: 12px; color: #4e5964; font-family: "IBM Plex Mono", monospace; font-size: 7px; letter-spacing: .12em; }
-    .risk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
-    .risk-title { color: var(--text-soft); font-family: "IBM Plex Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
-    .risk-values { color: var(--text-soft); font-family: "IBM Plex Mono", monospace; font-size: 11px; }
-    .risk-current { color: var(--yellow); font-weight: 600; text-shadow: 0 0 10px rgba(232,189,92,.12); }
-    .risk-limit { color: var(--text); }
-    .risk-bar { height: 7px; width: 100%; background: repeating-linear-gradient(90deg, #18212a 0, #18212a calc(10% - 1px), #202a34 calc(10% - 1px), #202a34 10%); border-radius: 5px; position: relative; overflow: visible; }
-    .risk-progress { position: absolute; left: 0; top: 0; height: 7px; width: 0%; background: linear-gradient(90deg, #d7a942, var(--yellow)); border-radius: 5px; box-shadow: 0 0 10px rgba(232,189,92,.18); transition: width .4s ease; }
-    .risk-marker { position: absolute; top: -3px; left: 100%; width: 1px; height: 13px; background: var(--red); transform: translateX(-1px); box-shadow: 0 0 7px rgba(239,107,115,.45); }
-    .risk-footer { display: flex; justify-content: space-between; margin-top: 8px; color: #5f6b76; font-family: "IBM Plex Mono", monospace; font-size: 9px; }
+    content="width=device-width, initial-scale=1.0">
 
-    .charts-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 12px; margin-bottom: 28px; }
-    .chart-panel, .chart-card { position: relative; background: linear-gradient(145deg, rgba(255,255,255,.015), transparent 60%), var(--panel); border: 1px solid var(--border); border-radius: var(--radius); min-height: 300px; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,.012), 0 6px 24px rgba(0,0,0,.08); }
-    .chart-header { height: 56px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-soft); background: rgba(255,255,255,.008); }
-    .chart-title { color: #a0acb7; font-family: "IBM Plex Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
-    .chart-subtitle, .chart-meta { color: #586570; font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: .04em; }
-    .chart-container { position: relative; height: 240px; width: 100%; padding: 10px; }
-    .chart-container canvas { width: 100% !important; height: 100% !important; }
+  <title>RiskLab</title>
 
-    .pulse-panel { background: linear-gradient(145deg, rgba(255,255,255,.012), transparent 60%), var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 28px; box-shadow: inset 0 1px 0 rgba(255,255,255,.012), 0 6px 24px rgba(0,0,0,.08); }
-    .pulse-header { height: 54px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border-soft); background: rgba(255,255,255,.008); }
-    .pulse-title { color: var(--text-soft); font-family: "IBM Plex Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; }
-    .pulse-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .pulse-item { position: relative; padding: 17px 18px; border-right: 1px solid var(--border-soft); transition: background .15s ease; }
-    .pulse-item:last-child { border-right: none; }
-    .pulse-item:hover { background: rgba(255,255,255,.012); }
-    .pulse-label { color: var(--text-muted); font-family: "IBM Plex Mono", monospace; font-size: 9px; text-transform: uppercase; margin-bottom: 7px; }
-    .pulse-value { color: #d6dee5; font-family: "IBM Plex Mono", monospace; font-size: 15px; }
-    .pulse-change { margin-top: 4px; color: var(--text-muted); font-family: "IBM Plex Mono", monospace; font-size: 9px; }
-    .pulse-change.positive { color: var(--green); }
-    .pulse-change.negative { color: var(--red); }
-    .pulse-change.neutral { color: var(--text-muted); }
-    .pulse-change.positive::before { content: "▲ "; font-size: 7px; }
-    .pulse-change.negative::before { content: "▼ "; font-size: 7px; }
+  <link
 
-    ::-webkit-scrollbar { width: 7px; height: 7px; }
-    ::-webkit-scrollbar-track { background: #080c11; }
-    ::-webkit-scrollbar-thumb { background: #202a34; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #2b3743; }
+    rel="icon"
 
-    @media (max-width: 1100px) {
-      .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .charts-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 800px) {
-      :root { --sidebar-width: 0px; }
-      .sidebar { display: none; }
-      .main { margin-left: 0; width: 100%; }
-      .content { padding: 20px; }
-      .topbar { padding: 0 20px; }
-      .secondary-grid { grid-template-columns: 1fr; }
-      .pulse-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-  </style>
+    type="image/png"
+
+    sizes="800x800"
+
+    href="./assets/favicon.png?v=2">
+
+  <link
+
+    rel="preconnect"
+
+    href="https://fonts.googleapis.com">
+
+  <link
+
+    rel="preconnect"
+
+    href="https://fonts.gstatic.com"
+
+    crossorigin>
+
+  <link
+
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+
+    rel="stylesheet">
+
+  <style>
+
+     {
+
+      --bg: #080c11;
+
+      --bg-soft: #0d1218;
+
+      --panel: #111820;
+
+      --panel-hover: #151e27;
+
+      --border: #202a34;
+
+      --border-soft: #18212a;
+
+      --text: #e7edf3;
+
+      --text-soft: #94a1ae;
+
+      --text-muted: #65727f;
+
+      --accent: #4da3ff;
+
+      --green: #4fd18b;
+
+      --yellow: #e8bd5c;
+
+      --red: #ef6b73;
+
+      --sidebar-width: 235px;
+
+      --radius: 8px;
+
+    }
+
+    * {
+
+      box-sizing: border-box;
+
+      margin: 0;
+
+      padding: 0;
+
+    }
+
+    html,
+
+    body {
+
+      width: 100%;
+
+      min-height: 100%;
+
+    }
+
+    body {
+
+      background: var(--bg);
+
+      color: var(--text);
+
+      font-family: "Inter", sans-serif;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+
+      overflow-x: hidden;
+
+    }
+
+    button,
+
+    input,
+
+    select {
+
+      font: inherit;
+
+    }
+
+    a {
+
+      color: inherit;
+
+      text-decoration: none;
+
+    }
+
+    .app {
+
+      min-height: 100vh;
+
+      display: flex;
+
+    }
+
+    .sidebar {
+
+      position: fixed;
+
+      top: 0;
+
+      left: 0;
+
+      bottom: 0;
+
+      width: var(--sidebar-width);
+
+      background: #090e14;
+
+      border-right: 1px solid var(--border);
+
+      display: flex;
+
+      flex-direction: column;
+
+      z-index: 100;
+
+    }
+
+    .brand {
+
+      height: 72px;
+
+      display: flex;
+
+      align-items: center;
+
+      padding: 0 22px;
+
+      border-bottom: 1px solid var(--border-soft);
+
+    }
+
+    .brand-mark {
+
+      width: 42px;
+
+      height: 42px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      flex-shrink: 0;
+
+      position: relative;
+
+    }
+
+    .brand-mark img {
+
+      width: 38px;
+
+      height: 38px;
+
+      object-fit: contain;
+
+      display: block;
+
+    }
+
+    .brand-name {
+
+      font-size: 15px;
+
+      font-weight: 600;
+
+      letter-spacing: .025em;
+
+    }
+
+    .brand-sub {
+
+      font-family: "IBM Plex Mono", monospace;
+
+      color: var(--text-muted);
+
+      font-size: 9px;
+
+      letter-spacing: .08em;
+
+      margin-top: 1px;
+
+    }
+
+    .nav {
+
+      padding: 20px 12px;
+
+    }
+
+    .nav-section {
+
+      margin-bottom: 22px;
+
+    }
+
+    .nav-title {
+
+      padding: 0 11px 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .12em;
+
+      text-transform: uppercase;
+
+    }
+
+    .nav-item {
+
+      position: relative;
+
+      height: 36px;
+
+      display: flex;
+
+      align-items: center;
+
+      padding: 0 11px;
+
+      margin-bottom: 2px;
+
+      border-radius: 6px;
+
+      border: 1px solid transparent;
+
+      color: var(--text-soft);
+
+      cursor: pointer;
+
+      transition:
+
+        background .15s ease,
+
+        color .15s ease,
+
+        border-color .15s ease;
+
+    }
+
+    .nav-item {
+
+      background: var(--panel);
+
+      color: var(--text);
+
+    }
+
+    .nav-item.active {
+
+      background:
+
+        linear-gradient(
+
+          90deg,
+
+          rgba(77,163,255,.11),
+
+          rgba(77,163,255,.025)
+
+        );
+
+      color: var(--text);
+
+      border-color: rgba(77,163,255,.10);
+
+    }
+
+    .nav-item.active::before {
+
+      content: "";
+
+      position: absolute;
+
+      left: -1px;
+
+      top: 7px;
+
+      bottom: 7px;
+
+      width: 2px;
+
+      background: var(--accent);
+
+      box-shadow:
+
+        0 0 8px rgba(77,163,255,.55);
+
+    }
+
+    .nav-icon {
+
+      width: 20px;
+
+      margin-right: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 12px;
+
+      text-align: center;
+
+    }
+
+    .nav-item.active .nav-icon {
+
+      color: var(--accent);
+
+    }
+
+    .sidebar-bottom {
+
+      margin-top: auto;
+
+      padding: 16px;
+
+      border-top: 1px solid var(--border-soft);
+
+    }
+
+    .system-status {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 6px 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .05em;
+
+      border: 1px solid rgba(79,209,139,.08);
+
+      border-radius: 5px;
+
+      background: rgba(79,209,139,.018);
+
+    }
+
+    .status-dot {
+
+      width: 6px;
+
+      height: 6px;
+
+      flex-shrink: 0;
+
+      border-radius: 50%;
+
+      background: var(--green);
+
+      box-shadow:
+
+        0 0 7px rgba(79,209,139,.45);
+
+    }
+
+    .sync-label {
+
+      margin-top: 8px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 8px;
+
+      text-align: center;
+
+    }
+
+    .main {
+
+      margin-left: var(--sidebar-width);
+
+      width: calc(100% - var(--sidebar-width));
+
+      min-height: 100vh;
+
+    }
+
+    .topbar {
+
+      height: 72px;
+
+      padding: 0 30px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      border-bottom: 1px solid var(--border-soft);
+
+      background: rgba(8, 12, 17, .92);
+
+      position: sticky;
+
+      top: 0;
+
+      z-index: 50;
+
+      backdrop-filter: blur(10px);
+
+      box-shadow:
+
+        0 1px 0 rgba(255,255,255,.015),
+
+        0 8px 30px rgba(0,0,0,.12);
+
+    }
+
+    .page-title {
+
+      font-size: 17px;
+
+      font-weight: 600;
+
+      letter-spacing: -.015em;
+
+    }
+
+    .page-subtitle {
+
+      margin-top: 2px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+    }
+
+    .topbar-right {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 20px;
+
+    }
+
+    .data-status {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 7px;
+
+      padding: 6px 9px;
+
+      color: var(--green);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .06em;
+
+      border: 1px solid rgba(79,209,139,.12);
+
+      border-radius: 5px;
+
+      background: rgba(79,209,139,.025);
+
+    }
+
+    .data-status .status-dot {
+
+      width: 5px;
+
+      height: 5px;
+
+      box-shadow:
+
+        0 0 7px rgba(79,209,139,.7);
+
+    }
+
+    .content {
+
+      width: 100%;
+
+      padding: 30px;
+
+      max-width: 1600px;
+
+    }
+
+    .section-header {
+
+      display: flex;
+
+      align-items: flex-end;
+
+      justify-content: space-between;
+
+      margin-top: 4px;
+
+      margin-bottom: 16px;
+
+    }
+
+    .section-title {
+
+      color: #a8b4c0;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      font-weight: 500;
+
+      text-transform: uppercase;
+
+      letter-spacing: .14em;
+
+    }
+
+    .section-date {
+
+      color: #72808d;
+
+      padding: 3px 7px;
+
+      border: 1px solid var(--border-soft);
+
+      border-radius: 4px;
+
+      background: rgba(255,255,255,.012);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 8px;
+
+      letter-spacing: .05em;
+
+    }
+
+    .metrics-grid {
+
+      display: grid;
+
+      grid-template-columns:
+
+        repeat(4, minmax(0, 1fr));
+
+      gap: 12px;
+
+      margin-bottom: 12px;
+
+    }
+
+    .metric {
+
+      position: relative;
+
+      background:
+
+        linear-gradient(
+
+          145deg,
+
+          rgba(255,255,255,.018),
+
+          transparent 55%
+
+        ),
+
+        var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      padding: 18px 19px;
+
+      min-height: 126px;
+
+      overflow: hidden;
+
+      box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.012),
+
+        0 5px 20px rgba(0,0,0,.08);
+
+      transition:
+
+        transform .15s ease,
+
+        border-color .15s ease,
+
+        background .15s ease,
+
+        box-shadow .15s ease;
+
+    }
+
+    .metric::before {
+
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+
+      left: 0;
+
+      right: 0;
+
+      height: 1px;
+
+      background: rgba(255,255,255,.035);
+
+    }
+
+    .metric {
+
+      background: var(--panel-hover);
+
+      border-color: #2b3743;
+
+      transform: translateY(-1px);
+
+      box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.02),
+
+        0 8px 24px rgba(0,0,0,.14);
+
+    }
+
+    .metrics-grid .metric(1)::after,
+
+    .metrics-grid .metric(3)::after {
+
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+
+      left: 0;
+
+      width: 42px;
+
+      height: 1px;
+
+      background: rgba(77,163,255,.65);
+
+      box-shadow:
+
+        0 0 10px rgba(77,163,255,.2);
+
+    }
+
+    .metrics-grid .metric(2)::after {
+
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+
+      left: 0;
+
+      width: 42px;
+
+      height: 1px;
+
+      background: var(--yellow);
+
+      box-shadow:
+
+        0 0 10px rgba(232,189,92,.18);
+
+    }
+
+    .metrics-grid .metric(4)::after {
+
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+
+      left: 0;
+
+      width: 42px;
+
+      height: 1px;
+
+      background: var(--red);
+
+      box-shadow:
+
+        0 0 10px rgba(239,107,115,.15);
+
+    }
+
+    .metric-label {
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .12em;
+
+      margin-bottom: 12px;
+
+    }
+
+    .metric-value {
+
+      color: var(--text);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 27px;
+
+      font-weight: 500;
+
+      line-height: 1.1;
+
+      letter-spacing: -.035em;
+
+    }
+
+    .metric-unit {
+
+      color: #71808e;
+
+      font-size: 12px;
+
+      margin-left: 3px;
+
+    }
+
+    .metric-secondary {
+
+      color: #687683;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      margin-top: 9px;
+
+      padding-top: 8px;
+
+      border-top: 1px solid rgba(255,255,255,.025);
+
+    }
+
+    .secondary-grid {
+
+      display: grid;
+
+      grid-template-columns:
+
+        repeat(3, minmax(0, 1fr));
+
+      gap: 12px;
+
+      margin-bottom: 28px;
+
+    }
+
+    .secondary-grid .metric {
+
+      min-height: 90px;
+
+      padding: 15px 18px;
+
+      background:
+
+        linear-gradient(
+
+          145deg,
+
+          rgba(255,255,255,.012),
+
+          transparent 60%
+
+        ),
+
+        #0f161e;
+
+    }
+
+    .secondary-grid .metric-label {
+
+      margin-bottom: 8px;
+
+    }
+
+    .secondary-grid .metric-value {
+
+      color: #cbd4dc;
+
+      font-size: 19px;
+
+    }
+
+    .secondary-grid .metric-secondary {
+
+      border-top: 0;
+
+      padding-top: 0;
+
+    }
+
+    .risk-panel {
+
+      position: relative;
+
+      background:
+
+        linear-gradient(
+
+          90deg,
+
+          rgba(232,189,92,.025),
+
+          transparent 55%
+
+        ),
+
+        var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      padding: 19px 20px;
+
+      margin-bottom: 28px;
+
+      box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.012),
+
+        0 6px 24px rgba(0,0,0,.10);
+
+    }
+
+    .risk-panel::before {
+
+      content: "CONTROL DE RIESGO";
+
+      position: absolute;
+
+      top: 8px;
+
+      right: 12px;
+
+      color: #4e5964;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 7px;
+
+      letter-spacing: .12em;
+
+    }
+
+    .risk-header {
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      margin-bottom: 17px;
+
+    }
+
+    .risk-title {
+
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .1em;
+
+    }
+
+    .risk-values {
+
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 11px;
+
+    }
+
+    .risk-current {
+
+      color: var(--yellow);
+
+      font-weight: 600;
+
+      text-shadow:
+
+        0 0 10px rgba(232,189,92,.12);
+
+    }
+
+    .risk-limit {
+
+      color: var(--text);
+
+    }
+
+    .risk-bar {
+
+      height: 7px;
+
+      width: 100%;
+
+      background:
+
+        repeating-linear-gradient(
+
+          90deg,
+
+          #18212a 0,
+
+          #18212a calc(10% - 1px),
+
+          #202a34 calc(10% - 1px),
+
+          #202a34 10%
+
+        );
+
+      border-radius: 5px;
+
+      position: relative;
+
+      overflow: visible;
+
+    }
+
+    .risk-progress {
+
+      position: absolute;
+
+      left: 0;
+
+      top: 0;
+
+      height: 7px;
+
+      width: 0%;
+
+      background:
+
+        linear-gradient(
+
+          90deg,
+
+          #d7a942,
+
+          var(--yellow)
+
+        );
+
+      border-radius: 5px;
+
+      box-shadow:
+
+        0 0 10px rgba(232,189,92,.18);
+
+      transition: width .4s ease;
+
+    }
+
+    .risk-marker {
+
+      position: absolute;
+
+      top: -3px;
+
+      left: 100%;
+
+      width: 1px;
+
+      height: 13px;
+
+      background: var(--red);
+
+      transform: translateX(-1px);
+
+      box-shadow:
+
+        0 0 7px rgba(239,107,115,.45);
+
+    }
+
+    .risk-footer {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      margin-top: 8px;
+
+      color: #5f6b76;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+    }
+
+    .charts-grid {
+
+      display: grid;
+
+      grid-template-columns:
+
+        1.45fr 1fr;
+
+      gap: 12px;
+
+      margin-bottom: 28px;
+
+    }
+
+    .chart-panel {
+
+      position: relative;
+
+      background:
+
+        linear-gradient(
+
+          145deg,
+
+          rgba(255,255,255,.015),
+
+          transparent 60%
+
+        ),
+
+        var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      min-height: 300px;
+
+      overflow: hidden;
+
+      box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.012),
+
+        0 6px 24px rgba(0,0,0,.08);
+
+    }
+
+    .chart-header {
+
+      height: 56px;
+
+      padding: 0 18px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      border-bottom: 1px solid var(--border-soft);
+
+      background: rgba(255,255,255,.008);
+
+    }
+
+    .chart-title {
+
+      color: #a0acb7;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .08em;
+
+    }
+
+    .chart-meta {
+
+      color: #586570;
+
+      padding: 3px 6px;
+
+      border: 1px solid var(--border-soft);
+
+      border-radius: 3px;
+
+      background: rgba(255,255,255,.012);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 8px;
+
+      letter-spacing: .04em;
+
+    }
+
+    .chart-body {
+
+      min-height: 244px;
+
+      padding: 18px;
+
+    }
+
+    .chart-placeholder {
+
+      width: 100%;
+
+      height: 210px;
+
+      position: relative;
+
+      border-bottom: 1px solid #1b252e;
+
+      border-left: 1px solid #1b252e;
+
+      background:
+
+        linear-gradient(
+
+          to right,
+
+          transparent 24%,
+
+          rgba(32,42,52,.45) 25%,
+
+          transparent 25%,
+
+          transparent 49%,
+
+          rgba(32,42,52,.45) 50%,
+
+          transparent 50%,
+
+          transparent 74%,
+
+          rgba(32,42,52,.45) 75%,
+
+          transparent 75%
+
+        ),
+
+        linear-gradient(
+
+          to bottom,
+
+          transparent 24%,
+
+          rgba(32,42,52,.45) 25%,
+
+          transparent 25%,
+
+          transparent 49%,
+
+          rgba(32,42,52,.45) 50%,
+
+          transparent 50%,
+
+          transparent 74%,
+
+          rgba(32,42,52,.45) 75%,
+
+          transparent 75%
+
+        );
+
+    }
+
+    .placeholder-message {
+
+      position: absolute;
+
+      inset: 0;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      color: #4e5b67;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      letter-spacing: .08em;
+
+      text-transform: uppercase;
+
+    }
+
+    .pulse-panel {
+
+      background:
+
+        linear-gradient(
+
+          145deg,
+
+          rgba(255,255,255,.012),
+
+          transparent 60%
+
+        ),
+
+        var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: var(--radius);
+
+      overflow: hidden;
+
+      margin-bottom: 28px;
+
+      box-shadow:
+
+        inset 0 1px 0 rgba(255,255,255,.012),
+
+        0 6px 24px rgba(0,0,0,.08);
+
+    }
+
+    .pulse-header {
+
+      height: 54px;
+
+      padding: 0 18px;
+
+      display: flex;
+
+      align-items: center;
+
+      border-bottom: 1px solid var(--border-soft);
+
+      background: rgba(255,255,255,.008);
+
+    }
+
+    .pulse-title {
+
+      color: var(--text-soft);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      letter-spacing: .09em;
+
+    }
+
+    .pulse-grid {
+
+      display: grid;
+
+      grid-template-columns:
+
+        repeat(4, 1fr);
+
+    }
+
+    .pulse-item {
+
+      position: relative;
+
+      padding: 17px 18px;
+
+      border-right: 1px solid var(--border-soft);
+
+      transition:
+
+        background .15s ease;
+
+    }
+
+    .pulse-item {
+
+      border-right: none;
+
+    }
+
+    .pulse-item {
+
+      background: rgba(255,255,255,.012);
+
+    }
+
+    .pulse-label {
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+      text-transform: uppercase;
+
+      margin-bottom: 7px;
+
+    }
+
+    .pulse-value {
+
+      color: #d6dee5;
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 15px;
+
+    }
+
+    .pulse-change {
+
+      margin-top: 4px;
+
+      color: var(--text-muted);
+
+      font-family: "IBM Plex Mono", monospace;
+
+      font-size: 9px;
+
+    }
+
+    .pulse-change.positive {
+
+      color: var(--green);
+
+    }
+
+    .pulse-change.negative {
+
+      color: var(--red);
+
+    }
+
+    .pulse-change.neutral {
+
+      color: var(--text-muted);
+
+    }
+
+    .pulse-change.positive::before {
+
+      content: "▲ ";
+
+      font-size: 7px;
+
+    }
+
+    .pulse-change.negative::before {
+
+      content: "▼ ";
+
+      font-size: 7px;
+
+    }
+
+    ::-webkit-scrollbar {
+
+      width: 7px;
+
+      height: 7px;
+
+    }
+
+    ::-webkit-scrollbar-track {
+
+      background: #080c11;
+
+    }
+
+    ::-webkit-scrollbar-thumb {
+
+      background: #202a34;
+
+      border-radius: 10px;
+
+    }
+
+    ::-webkit-scrollbar-thumb {
+
+      background: #2b3743;
+
+    }
+
+    @media (min-width: 1500px) {
+
+      .content {
+
+        padding-left: 38px;
+
+        padding-right: 38px;
+
+      }
+
+      .metric-value {
+
+        font-size: 29px;
+
+      }
+
+    }
+
+    @media (max-width: 1100px) {
+
+      .metrics-grid {
+
+        grid-template-columns:
+
+          repeat(2, minmax(0, 1fr));
+
+      }
+
+      .charts-grid {
+
+        grid-template-columns: 1fr;
+
+      }
+
+    }
+
+    @media (max-width: 800px) {
+
+       {
+
+        --sidebar-width: 0px;
+
+      }
+
+      .sidebar {
+
+        display: none;
+
+      }
+
+      .main {
+
+        margin-left: 0;
+
+        width: 100%;
+
+      }
+
+      .content {
+
+        padding: 20px;
+
+      }
+
+      .topbar {
+
+        padding: 0 20px;
+
+      }
+
+      .secondary-grid {
+
+        grid-template-columns: 1fr;
+
+      }
+
+      .pulse-grid {
+
+        grid-template-columns:
+
+          repeat(2, 1fr);
+
+      }
+
+      .pulse-item(2) {
+
+        border-right: none;
+
+      }
+
+      .pulse-item(-n+2) {
+
+        border-bottom: 1px solid var(--border-soft);
+
+      }
+
+      .topbar-right {
+
+        gap: 8px;
+
+      }
+
+      .data-status {
+
+        padding: 5px 7px;
+
+      }
+
+    }
+
+    @media (max-width: 520px) {
+
+      .metrics-grid {
+
+        grid-template-columns: 1fr;
+
+      }
+
+      .pulse-grid {
+
+        grid-template-columns: 1fr;
+
+      }
+
+      .pulse-item {
+
+        border-right: none !important;
+
+        border-bottom: 1px solid var(--border-soft);
+
+      }
+
+      .pulse-item {
+
+        border-bottom: none;
+
+      }
+
+    }
+
+    .chart-container {
+
+    position: relative;
+
+    height: 260px;
+
+    width: 100%;
+
+    padding: 10px 0 4px 0;
+
+}
+
+.chart-container canvas {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+}
+
+  </style>
+
 </head>
+
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">
-          <img src="./assets/favicon.png?v=2" alt="RiskLab">
-        </div>
-        <div>
-          <div class="brand-name">Risk Lab</div>
-          <div class="brand-sub">RIESGOS &amp; GESTIÓN</div>
-        </div>
-      </div>
-      <nav class="nav">
-        <div class="nav-section">
-          <div class="nav-title">Monitor</div>
-          <div class="nav-item active" data-view="visor">
-            <div class="nav-icon">01</div><div>Visor</div>
-          </div>
-          <div class="nav-item" data-view="historico">
-            <div class="nav-icon">02</div><div>Histórico</div>
-          </div>
-          <div class="nav-item" data-view="portafolios">
-            <div class="nav-icon">03</div><div>Portafolios</div>
-          </div>
-          <div class="nav-item" data-view="riesgo">
-            <div class="nav-icon">04</div><div>Riesgo</div>
-          </div>
-          <div class="nav-item" data-view="administradores">
-            <div class="nav-icon">05</div><div>Administradores</div>
-          </div>
-          <div class="nav-item" data-view="mandatarios">
-            <div class="nav-icon">06</div><div>Mandatarios</div>
-          </div>
-        </div>
-        <div class="nav-section">
-          <div class="nav-title">Laboratorio</div>
-          <div class="nav-item" data-view="tasas-nominales">
-            <div class="nav-icon">07</div><div>Tasas nominales</div>
-          </div>
-          <div class="nav-item" data-view="tasas-reales">
-            <div class="nav-icon">08</div><div>Tasas reales</div>
-          </div>
-        </div>
-      </nav>
-      <div class="sidebar-bottom">
-        <div class="system-status">
-          <span class="status-dot"></span>
-          <span>DATOS EN LÍNEA</span>
-        </div>
-        <div class="sync-label">DATOS LOCALES · AGOSTO 2026</div>
-      </div>
-    </aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <div class="page-title">RIESGOS FINANCIEROS</div>
-          <div class="page-subtitle">INSTITUTO DE SEGURIDAD SOCIAL DEL ESTADO DE GUANAJUATO</div>
-        </div>
-        <div class="topbar-right">
-          <div class="data-status">
-            <span class="status-dot"></span>
-            <span>DATOS EN LÍNEA</span>
-          </div>
-        </div>
-      </header>
+  <div class="app">
 
-      <div class="content">
-        <!-- VISTA 01: VISOR -->
-        <section class="view" id="view-visor">
-          <div class="section-header">
-            <div class="section-title">Métricas principales</div>
-            <div class="section-date" id="overview-date">—</div>
-          </div>
-          
-          <section class="metrics-grid">
-            <div class="metric">
-              <div class="metric-label">Valor de mercado</div>
-              <div class="metric-value"><span id="valor-mercado">—</span><span class="metric-unit">MDP</span></div>
-              <div class="metric-secondary" id="valor-mercado-secondary">—</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">VaR</div>
-              <div class="metric-value"><span id="var">—</span><span class="metric-unit">%</span></div>
-              <div class="metric-secondary" id="var-mdp">—</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Volatilidad</div>
-              <div class="metric-value"><span id="volatilidad">—</span><span class="metric-unit">%</span></div>
-              <div class="metric-secondary">Histórica</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">CVaR</div>
-              <div class="metric-value"><span id="cvar">—</span><span class="metric-unit">%</span></div>
-              <div class="metric-secondary" id="cvar-mdp">—</div>
-            </div>
-          </section>
+    <aside class="sidebar">
 
-          <section class="secondary-grid">
-            <div class="metric">
-              <div class="metric-label">Monto de inversión</div>
-              <div class="metric-value"><span id="monto-inversion">—</span><span class="metric-unit">MDP</span></div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Duración</div>
-              <div class="metric-value"><span id="duracion">—</span></div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Convexidad</div>
-              <div class="metric-value"><span id="convexidad">—</span></div>
-            </div>
-          </section>
+      <div class="brand">
 
-          <section class="risk-panel">
-            <div class="risk-header">
-              <div class="risk-title">VaR / Límite de política</div>
-              <div class="risk-values">
-                <span class="risk-current" id="risk-current">—</span> / <span class="risk-limit" id="risk-limit">—</span>
-              </div>
-            </div>
-            <div class="risk-bar">
-              <div class="risk-progress" id="risk-progress"></div>
-              <div class="risk-marker"></div>
-            </div>
-            <div class="risk-footer">
-              <span>0%</span>
-              <span id="risk-utilization">UTILIZACIÓN —</span>
-              <span id="risk-limit-footer">—</span>
-            </div>
-          </section>
+        <div class="brand-mark">
 
-          <div class="section-header">
-            <div class="section-title">Perfil de mercado</div>
-          </div>
+          <img src="./assets/favicon.png?v=2" alt="RiskLab">
 
-          <section class="charts-grid">
-            <div class="chart-card">
-              <div class="chart-header">
-                <div>
-                  <div class="chart-title">Valor de mercado histórico</div>
-                  <div class="chart-meta">HISTÓRICO</div>
-                </div>
-              </div>
-              <div class="chart-container">
-                <canvas id="market-value-chart"></canvas>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <div>
-                  <div class="chart-title">Perfil de riesgo</div>
-                  <div class="chart-meta">VOLATILIDAD</div>
-                </div>
-              </div>
-              <div class="chart-container">
-                <canvas id="risk-profile-chart"></canvas>
-              </div>
-            </div>
-          </section>
+        </div>
 
-          <section class="pulse-panel">
-            <div class="pulse-header">
-              <div class="pulse-title">Pulso de mercado</div>
-            </div>
-            <div class="pulse-grid">
-              <div class="pulse-item">
-                <div class="pulse-label">VM vs cierre anterior</div>
-                <div class="pulse-value" id="pulse-vm">—</div>
-                <div class="pulse-change neutral" id="pulse-vm-change">—</div>
-              </div>
-              <div class="pulse-item">
-                <div class="pulse-label">Volatilidad</div>
-                <div class="pulse-value" id="pulse-vol">—</div>
-                <div class="pulse-change neutral" id="pulse-vol-change">—</div>
-              </div>
-              <div class="pulse-item">
-                <div class="pulse-label">Duración</div>
-                <div class="pulse-value" id="pulse-duration">—</div>
-                <div class="pulse-change neutral" id="pulse-duration-change">—</div>
-              </div>
-              <div class="pulse-item">
-                <div class="pulse-label">Convexidad</div>
-                <div class="pulse-value" id="pulse-convexity">—</div>
-                <div class="pulse-change neutral" id="pulse-convexity-change">—</div>
-              </div>
-            </div>
-          </section>
-        </section>
+        <div>
 
-        <!-- VISTA 02: HISTÓRICO -->
-        <section class="view" id="view-historico" hidden>
-          <div class="section-header">
-            <div class="section-title">Histórico</div>
-            <div class="section-date">Evolución de la cartera</div>
-          </div>
-          <section class="charts-grid">
-            <div class="chart-card">
-              <div class="chart-header">
-                <div>
-                  <div class="chart-title">Valor de mercado</div>
-                  <div class="chart-subtitle">Evolución histórica de la cartera</div>
-                </div>
-              </div>
-              <div class="chart-container">
-                <canvas id="historico-market-value-chart"></canvas>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <div>
-                  <div class="chart-title">Perfil de riesgo</div>
-                  <div class="chart-subtitle">Volatilidad y VaR históricos</div>
-                </div>
-              </div>
-              <div class="chart-container">
-                <canvas id="historico-risk-chart"></canvas>
-              </div>
-            </div>
-          </section>
+          <div class="brand-name">
 
-          <section class="secondary-grid">
-            <div class="metric">
-              <div class="metric-label">Último valor de mercado</div>
-              <div class="metric-value" id="historico-last-vm">—</div>
-              <div class="metric-unit">MDP</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Última volatilidad</div>
-              <div class="metric-value" id="historico-last-vol">—</div>
-              <div class="metric-unit">%</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Último VaR</div>
-              <div class="metric-value" id="historico-last-var">—</div>
-              <div class="metric-unit">%</div>
-            </div>
-          </section>
-        </section>
+            Risk Lab
 
-        <!-- CONTENEDORES PARA LAS DEMÁS VISTAS -->
-        <section class="view" id="view-portafolios" hidden></section>
-        <section class="view" id="view-riesgo" hidden></section>
-        <section class="view" id="view-administradores" hidden></section>
-        <section class="view" id="view-mandatarios" hidden></section>
-        <section class="view" id="view-tasas-nominales" hidden></section>
-        <section class="view" id="view-tasas-reales" hidden></section>
+          </div>
 
-      </div>
-    </main>
-  </div>
+          <div class="brand-sub">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="./js/data.js"></script>
-  <script src="./js/overview.js"></script>
-  <script src="./js/app.js"></script>
+            RIESGOS & GESTIÓN
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <nav class="nav">
+
+        <div class="nav-section">
+
+          <div class="nav-title">
+
+            Monitor
+
+          </div>
+
+<div class="nav-item active" data-view="visor">
+
+    <div class="nav-icon">
+
+        01
+
+    </div>
+
+    <div>
+
+        Visor
+
+    </div>
+
+</div>
+
+<div class="nav-item" data-view="historico">
+
+    <div class="nav-icon">
+
+        02
+
+    </div>
+
+    <div>
+
+        Histórico
+
+    </div>
+
+</div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              03
+
+            </div>
+
+            <div>
+
+              Portafolios
+
+            </div>
+
+          </div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              04
+
+            </div>
+
+            <div>
+
+              Riesgo
+
+            </div>
+
+          </div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              05
+
+            </div>
+
+            <div>
+
+              Administradores
+
+            </div>
+
+          </div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              06
+
+            </div>
+
+            <div>
+
+              Mandatarios
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="nav-section">
+
+          <div class="nav-title">
+
+            Laboratorio
+
+          </div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              07
+
+            </div>
+
+            <div>
+
+              Tasas nominales
+
+            </div>
+
+          </div>
+
+          <div class="nav-item">
+
+            <div class="nav-icon">
+
+              08
+
+            </div>
+
+            <div>
+
+              Tasas reales
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="system-status">
+
+          <span class="status-dot"></span>
+
+          <span>
+
+            DATOS EN LÍNEA
+
+          </span>
+
+        </div>
+
+        <div class="sync-label">
+
+          DATOS LOCALES · AGOSTO 2026
+
+        </div>
+
+      </div>
+
+    </aside>
+
+    <main class="main">
+
+      <header class="topbar">
+
+        <div>
+
+          <div class="page-title">
+
+            RIESGOS FINANCIEROS
+
+          </div>
+
+          <div class="page-subtitle">
+
+            INSTITUTO DE SEGURIDAD SOCIAL DEL ESTADO DE GUANAJUATO
+
+          </div>
+
+        </div>
+
+        <div class="topbar-right">
+
+          <div class="data-status">
+
+            <span class="status-dot"></span>
+
+            <span>
+
+              DATOS EN LÍNEA
+
+            </span>
+
+          </div>
+
+        </div>
+
+      </header>
+
+      <div class="content">
+
+    <section class="view" id="view-visor">
+
+    </section>
+
+<section class="view" id="view-historico" hidden>
+
+    <div class="section-header">
+
+        <div class="section-title">
+
+            Histórico
+
+        </div>
+
+        <div class="section-date">
+
+            Evolución de la cartera
+
+        </div>
+
+    </div>
+
+    <section class="charts-grid">
+
+        <div class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+
+                        Valor de mercado
+
+                    </div>
+
+                    <div class="chart-subtitle">
+
+                        Evolución histórica de la cartera
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas
+
+                    id="historico-market-value-chart"
+
+                ></canvas>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</section>
+
+        <div class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+
+                        Perfil de riesgo
+
+                    </div>
+
+                    <div class="chart-subtitle">
+
+                        Volatilidad y VaR históricos
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="historico-risk-chart"></canvas>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="secondary-grid">
+
+        <div class="metric-card">
+
+            <div class="metric-label">
+
+                Último valor de mercado
+
+            </div>
+
+            <div class="metric-value" id="historico-last-vm">
+
+                —
+
+            </div>
+
+            <div class="metric-unit">
+
+                MDP
+
+            </div>
+
+        </div>
+
+        <div class="metric-card">
+
+            <div class="metric-label">
+
+                Última volatilidad
+
+            </div>
+
+            <div class="metric-value" id="historico-last-vol">
+
+                —
+
+            </div>
+
+            <div class="metric-unit">
+
+                %
+
+            </div>
+
+        </div>
+
+        <div class="metric-card">
+
+            <div class="metric-label">
+
+                Último VaR
+
+            </div>
+
+            <div class="metric-value" id="historico-last-var">
+
+                —
+
+            </div>
+
+            <div class="metric-unit">
+
+                %
+
+            </div>
+
+        </div>
+
+    </section>
+
+</section>  
+
+</div>
+
+        <div class="section-header">
+
+          <div class="section-title">
+
+            Métricas principales
+
+          </div>
+
+          <div class="section-date" id="overview-date">
+
+            —
+
+          </div>
+
+        </div>
+
+        <section class="metrics-grid">
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              Valor de mercado
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="valor-mercado">
+
+                —
+
+              </span>
+
+              <span class="metric-unit">
+
+                MDP
+
+              </span>
+
+            </div>
+
+            <div class="metric-secondary" id="valor-mercado-secondary">
+
+              —
+
+            </div>
+
+          </div>
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              VaR
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="var">
+
+                —
+
+              </span>
+
+              <span class="metric-unit">
+
+                %
+
+              </span>
+
+            </div>
+
+            <div class="metric-secondary" id="var-mdp">
+
+              —
+
+            </div>
+
+          </div>
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              Volatilidad
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="volatilidad">
+
+                —
+
+              </span>
+
+              <span class="metric-unit">
+
+                %
+
+              </span>
+
+            </div>
+
+            <div class="metric-secondary">
+
+              Histórica
+
+            </div>
+
+          </div>
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              CVaR
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="cvar">
+
+                —
+
+              </span>
+
+              <span class="metric-unit">
+
+                %
+
+              </span>
+
+            </div>
+
+            <div class="metric-secondary" id="cvar-mdp">
+
+              —
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <section class="secondary-grid">
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              Monto de inversión
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="monto-inversion">
+
+                —
+
+              </span>
+
+              <span class="metric-unit">
+
+                MDP
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              Duración
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="duracion">
+
+                —
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <div class="metric">
+
+            <div class="metric-label">
+
+              Convexidad
+
+            </div>
+
+            <div class="metric-value">
+
+              <span id="convexidad">
+
+                —
+
+              </span>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <section class="risk-panel">
+
+          <div class="risk-header">
+
+            <div class="risk-title">
+
+              VaR / Límite de política
+
+            </div>
+
+            <div class="risk-values">
+
+              <span class="risk-current" id="risk-current">
+
+                —
+
+              </span>
+
+              /
+
+              <span class="risk-limit" id="risk-limit">
+
+                —
+
+              </span>
+
+            </div>
+
+          </div>
+
+          <div class="risk-bar">
+
+            <div class="risk-progress" id="risk-progress">
+
+            </div>
+
+            <div class="risk-marker"></div>
+
+          </div>
+
+          <div class="risk-footer">
+
+            <span>
+
+              0%
+
+            </span>
+
+            <span id="risk-utilization">
+
+              UTILIZACIÓN —
+
+            </span>
+
+            <span id="risk-limit-footer">
+
+              —
+
+            </span>
+
+          </div>
+
+        </section>
+
+        <div class="section-header">
+
+          <div class="section-title">
+
+            Perfil de mercado
+
+          </div>
+
+        </div>
+
+        <section class="charts-grid">
+
+          <div class="chart-card">
+
+            <div class="chart-header">
+
+              <div>
+
+                <div class="chart-title">
+
+                  Valor de mercado histórico
+
+                </div>
+
+                <div class="chart-meta">
+
+                  HISTÓRICO
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="chart-container">
+
+              <canvas id="market-value-chart"></canvas>
+
+            </div>
+
+          </div>
+
+<div class="chart-card">
+
+    <div class="chart-header">
+
+        <div>
+
+            <div class="chart-title">
+
+                Perfil de riesgo
+
+            </div>
+
+            <div class="chart-meta">
+
+                VOLATILIDAD
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="chart-container">
+
+        <canvas id="risk-profile-chart"></canvas>
+
+    </div>
+
+</div>
+
+        <section class="pulse-panel">
+
+          <div class="pulse-header">
+
+            <div class="pulse-title">
+
+              Pulso de mercado
+
+            </div>
+
+          </div>
+
+          <div class="pulse-grid">
+
+            <div class="pulse-item">
+
+              <div class="pulse-label">
+
+                VM vs cierre anterior
+
+              </div>
+
+              <div class="pulse-value" id="pulse-vm">
+
+                —
+
+              </div>
+
+              <div class="pulse-change neutral" id="pulse-vm-change">
+
+                —
+
+              </div>
+
+            </div>
+
+            <div class="pulse-item">
+
+              <div class="pulse-label">
+
+                Volatilidad
+
+              </div>
+
+              <div class="pulse-value" id="pulse-vol">
+
+                —
+
+              </div>
+
+              <div class="pulse-change neutral" id="pulse-vol-change">
+
+                —
+
+              </div>
+
+            </div>
+
+            <div class="pulse-item">
+
+              <div class="pulse-label">
+
+                Duración
+
+              </div>
+
+              <div
+
+                class="pulse-value"
+
+                id="pulse-duration"
+
+              >
+
+                —
+
+              </div>
+
+              <div
+
+                class="pulse-change neutral"
+
+                id="pulse-duration-change"
+
+              >
+
+                —
+
+              </div>
+
+            </div>
+
+            <div class="pulse-item">
+
+              <div class="pulse-label">
+
+                Convexidad
+
+              </div>
+
+              <div
+
+                class="pulse-value"
+
+                id="pulse-convexity"
+
+              >
+
+                —
+
+              </div>
+
+              <div
+
+                class="pulse-change neutral"
+
+                id="pulse-convexity-change"
+
+              >
+
+                —
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="./js/data.js"></script>
+
+  <script src="./js/overview.js"></script>
+
+  <script src="./js/app.js"></script>
+
 </body>
+
 </html>

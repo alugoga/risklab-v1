@@ -260,14 +260,6 @@ navItem.addEventListener(
                         // Cambiar vista
                         // ------------------------------
 
-                        views.forEach(
-                            function (view) {
-
-                                view.style.display =
-                                    "none";
-
-                            }
-                        );
 
 
                         const selectedView =
@@ -276,12 +268,7 @@ navItem.addEventListener(
                             );
 
 
-                        if (selectedView) {
-
-                            selectedView.style.display =
-                                "block";
-
-                        }
+                    
 
                     }
                 );

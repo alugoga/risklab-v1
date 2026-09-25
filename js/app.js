@@ -117,13 +117,19 @@ document.addEventListener("DOMContentLoaded", async function () {
                         // ------------------------------
 
                         views.forEach(
-                            function (view) {
+    function (view) {
 
-                                view.style.display =
-                                    "none";
+        view.classList.remove(
+            "active"
+        );
 
-                            }
-                        );
+        view.classList.add(
+            "hidden"
+        );
+
+    }
+);
+
 
 
                         // ------------------------------
@@ -136,12 +142,17 @@ document.addEventListener("DOMContentLoaded", async function () {
                             );
 
 
-                        if (selectedView) {
+if (selectedView) {
 
-                            selectedView.style.display =
-                                "block";
+    selectedView.classList.remove(
+        "hidden"
+    );
 
-                        }
+    selectedView.classList.add(
+        "active"
+    );
+
+}
 
                     }
                 );
@@ -211,9 +222,15 @@ document.addEventListener(
         navItems.forEach(
             function (navItem) {
 
-                navItem.addEventListener(
-                    "click",
-                    function () {
+navItem.addEventListener(
+    "click",
+    function () {
+
+        console.log(
+            "CLICK NAV:",
+            navItem.textContent.trim(),
+            navItem.dataset.view
+        );
 
                         const targetView =
                             navItem.dataset.view;

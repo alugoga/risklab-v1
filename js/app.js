@@ -48,10 +48,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             historico
         );
 
-        renderHistoricoMarketValueChart(
-            historico
-        );
-
         console.log(
             "RISK LAB: dashboard renderizado"
         );
@@ -178,11 +174,27 @@ document.addEventListener(
                                 "view-" + targetView
                             );
 
+if (selectedView) {
 
-                        if (selectedView) {
+    selectedView.hidden =
+        false;
 
-                            selectedView.hidden =
-                                false;
+
+    // ------------------------------
+    // Renderizar Histórico
+    // ------------------------------
+
+    if (
+        targetView === "historico"
+    ) {
+
+        renderHistoricoMarketValueChart(
+            historico
+        );
+
+    }
+
+}
 
                         }
 

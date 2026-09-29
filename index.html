@@ -1176,54 +1176,45 @@
      API
   ========================================================== */
 
-  async function fetchLatest() {
+async function fetchLatest() {
 
-    if (
-      !API_URL ||
-      API_URL === "https://script.google.com/a/macros/isseg.gob.mx/s/AKfycbygb0vx8F89lDGCj9Nr1CQeijehdcVQqpo6LAGLTYMMKf7nPj7091klj4PZ_r6aderHPA/exec"
-    ) {
+  if (!API_URL) {
 
-      throw new Error(
-        "Falta configurar API_URL en index.html."
-      );
-
-    }
-
-
-    const response = await fetch(
-      API_URL + "?action=latest",
-      {
-        method: "GET",
-        cache: "no-store"
-      }
+    throw new Error(
+      "Falta configurar API_URL en index.html."
     );
 
+  }
 
-    if (!response.ok) {
-
-      throw new Error(
-        "La API respondió con HTTP " +
-        response.status
-      );
-
+  const response = await fetch(
+    API_URL + "?action=latest",
+    {
+      method: "GET",
+      cache: "no-store"
     }
+  );
 
+  if (!response.ok) {
 
-    const json = await response.json();
-
-
-    if (!json.ok) {
-
-      throw new Error(
-        "La API devolvió ok=false."
-      );
-
-    }
-
-
-    return json;
+    throw new Error(
+      "La API respondió con HTTP " +
+      response.status
+    );
 
   }
+
+  const json = await response.json();
+
+  if (!json.ok) {
+
+    throw new Error(
+      "La API devolvió ok=false."
+    );
+
+  }
+
+  return json;
+}
 
 
   /* ==========================================================

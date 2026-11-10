@@ -3,1737 +3,1570 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>RiskLab</title>
-  <style>
-    :root {
-      --bg: #0b0f14;
-      --panel: #111820;
-      --panel-2: #151e27;
-      --border: #202a33;
-      --text: #e6edf3;
-      --muted: #84909c;
-      --accent: #58a6ff;
-      --accent-2: #7ee787;
-      --warning: #d29922;
-      --danger: #f85149;
-      --radius: 10px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family:
-        Inter,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-    }
-
-    button,
-    input,
-    select {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .app {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 230px 1fr;
-    }
-
-    .sidebar {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      border-right: 1px solid var(--border);
-      background: #0d1319;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .brand {
-      height: 72px;
-      display: flex;
-      align-items: center;
-      padding: 0 22px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand-mark {
-      width: 32px;
-      height: 32px;
-      border: 1px solid var(--accent);
-      border-radius: 7px;
-      display: grid;
-      place-items: center;
-      margin-right: 10px;
-      color: var(--accent);
-      font-weight: 700;
-      font-size: 13px;
-    }
-
-    .brand-name {
-      font-size: 16px;
-      font-weight: 650;
-      letter-spacing: 0.2px;
-    }
-
-    .brand-subtitle {
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 2px;
-      letter-spacing: 0.7px;
-      text-transform: uppercase;
-    }
-
-    .nav {
-      padding: 18px 12px;
-    }
-
-    .nav-label {
-      color: #596572;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 0 11px 8px;
-    }
-
-    .nav-item {
-      width: 100%;
-      border: 0;
-      background: transparent;
-      color: var(--muted);
-      text-align: left;
-      padding: 10px 11px;
-      border-radius: 7px;
-      margin-bottom: 3px;
-      font-size: 13px;
-    }
-
-    .nav-item:hover {
-      background: #121a22;
-      color: var(--text);
-    }
-
-    .nav-item.active {
-      background: #17212b;
-      color: var(--text);
-      border-left: 2px solid var(--accent);
-      padding-left: 9px;
-    }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 15px;
-      border-top: 1px solid var(--border);
-    }
-
-    .api-status {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--warning);
-    }
-
-    .status-dot.ok {
-      background: var(--accent-2);
-    }
-
-    .status-dot.error {
-      background: var(--danger);
-    }
-
-    /* =========================
-       MAIN
-    ========================= */
-
-    .main {
-      min-width: 0;
-    }
-
-    .topbar {
-      height: 72px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      background: rgba(11, 15, 20, 0.94);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .page-title {
-      font-size: 18px;
-      font-weight: 650;
-    }
-
-    .page-subtitle {
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .date-badge,
-    .version-badge {
-      border: 1px solid var(--border);
-      background: var(--panel);
-      border-radius: 6px;
-      padding: 7px 10px;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .content {
-      padding: 28px;
-      max-width: 1600px;
-    }
-
-    /* =========================
-       PANELS
-    ========================= */
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      padding: 14px 17px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .panel-title {
-      font-size: 13px;
-      font-weight: 650;
-    }
-
-    .panel-subtitle {
-      color: var(--muted);
-      font-size: 11px;
-      margin-top: 3px;
-    }
-
-    .panel-body {
-      padding: 17px;
-    }
-
-    /* =========================
-       KPI
-    ========================= */
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .kpi {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      min-height: 108px;
-    }
-
-    .kpi-label {
-      color: var(--muted);
-      font-size: 11px;
-      margin-bottom: 10px;
-    }
-
-    .kpi-value {
-      font-size: 24px;
-      line-height: 1.1;
-      font-weight: 650;
-      letter-spacing: -0.4px;
-    }
-
-    .kpi-unit {
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 6px;
-    }
-
-    /* =========================
-       DASHBOARD GRID
-    ========================= */
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      background: var(--border);
-    }
-
-    .metric {
-      background: var(--panel);
-      padding: 15px;
-    }
-
-    .metric-label {
-      color: var(--muted);
-      font-size: 11px;
-      margin-bottom: 8px;
-    }
-
-    .metric-value {
-      font-size: 17px;
-      font-weight: 600;
-    }
-
-    .metric-unit {
-      color: var(--muted);
-      font-size: 10px;
-      margin-left: 4px;
-    }
-
-    /* =========================
-       TABLE
-    ========================= */
-
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    th,
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    th {
-      color: var(--muted);
-      font-weight: 500;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    th:first-child,
-    td:first-child {
-      text-align: left;
-    }
-
-    tr:last-child td {
-      border-bottom: 0;
-    }
-
-    /* =========================
-       MANDATES
-    ========================= */
-
-    .mandate-list {
-      display: grid;
-      gap: 8px;
-    }
-
-    .mandate {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      padding: 11px 12px;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      background: var(--panel-2);
-    }
-
-    .mandate-name {
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .mandate-status {
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 3px;
-    }
-
-    .mandate-value {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .historical {
-      opacity: 0.68;
-    }
-
-    /* =========================
-       STATES
-    ========================= */
-
-    .loading {
-      padding: 50px 20px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .error {
-      border: 1px solid rgba(248, 81, 73, 0.35);
-      background: rgba(248, 81, 73, 0.06);
-      color: #ffb4af;
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    @media (max-width: 1100px) {
-      .kpi-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 760px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: static;
-        height: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .nav {
-        display: flex;
-        overflow-x: auto;
-      }
-
-      .nav-label {
-        display: none;
-      }
-
-      .nav-item {
-        width: auto;
-        white-space: nowrap;
-      }
-
-      .sidebar-footer {
-        display: none;
-      }
-
-      .content {
-        padding: 16px;
-      }
-
-      .topbar {
-        padding: 0 16px;
-      }
-
-      .kpi-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .metric-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+  <link rel="stylesheet" href="./css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+  <script src="./js/login-demo.js" defer></script>
+  <script src="./js/app.js" defer></script>
 </head>
+<body class="login-locked">
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="./assets/favicon.png" alt="" class="login-favicon">
+        <div>
+          <div class="login-brand-name">RiskLab</div>
+          <div class="login-brand-caption">ACCESO RESTRINGIDO</div>
+        </div>
+      </div>
 
-<body>
+      <div class="login-divider"></div>
 
-<div class="app">
+      <div class="login-intro"><!-- PRUEBA DE ICONO PARA LOGIN -->
+        <h1 id="login-title">¡Hola!</h1>
+        <p>Ingresa tus credenciales</p>
+      </div>
 
+      <form id="login-form" class="login-form" novalidate>
+        <label for="login-username">Usuario</label>
+        <input id="login-username" name="username" type="text" autocomplete="username"
+          placeholder="Tu usuario" required autofocus>
+        <label for="login-password">Contraseña</label>
+        <div class="login-password-wrap">
+          <input id="login-password" name="password" type="password" autocomplete="current-password"
+            placeholder="Tu contraseña" required>
+          <button id="login-password-toggle" class="login-password-toggle" type="button"
+            aria-label="Mostrar contraseña">Ver</button>
+        </div>
+        <p id="login-error" class="login-error" role="alert" hidden>Usuario o contraseña incorrectos.</p>
+        <button class="login-submit" type="submit">
+          <span>Acceder</span><span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <div class="login-foot">
+        <span class="login-status-dot"></span>
+        <span>Instituto de Seguridad Social del Estado de Guanajuato</span>
+      </div>
+    </div>
+    <p class="login-disclaimer">Coordinación de Riesgos Financieros</p>
+  </div>
+
+<div class="app-shell" id="risklab-app">
   <aside class="sidebar">
 
     <div class="brand">
-      <div class="brand-mark">RL</div>
+      <a
+        href="https://github.com/riskl-ab/risklab/releases/download/exe/mat-risklab.exe"
+        class="brand-download"
+        title="descargar mat-risklab"
+        aria-label="exe habilitado para windows"
+      >
+        <div class="brand-mark">
+          <img src="./assets/favicon.png" alt="RiskLab">
+        </div>
+      </a>
 
       <div>
         <div class="brand-name">RiskLab</div>
-        <div class="brand-subtitle">Risk Analytics</div>
+        <div class="brand-sub">RIESGOS FINANCIEROS</div>
       </div>
     </div>
+      
+      <nav class="nav" id="mobile-navigation" aria-label="Navegación principal">
+        <div class="nav-group-title">Monitor</div>
+        <button class="nav-item active" data-view="visor"><span>01</span> Visor</button>
+        <button class="nav-item" data-view="historico"><span>02</span> Histórico</button>
+        <button class="nav-item" data-view="portafolios"><span>03</span> Portafolios</button>
+        <button class="nav-item" data-view="mandatarios"><span>04</span> Mandatarios</button>
 
-    <nav class="nav">
 
-      <div class="nav-label">Workspace</div>
+        
+        <div class="nav-group-title" data-permission="laboratorio">Laboratorio</div>
+        <button class="nav-item" data-view="riesgo" data-permission="laboratorio"><span>05</span> Curvas de tasas</button>
+        <button class="nav-item" data-view="cosechas" data-permission="laboratorio"><span>06</span> Cosechas de crédito</button>
 
-      <button class="nav-item active" data-section="overview">
-        Overview
-      </button>
+        <div class="nav-group-title" data-permission="captura">Inversiones</div>
+        <button class="nav-item" data-view="cartera" data-permission="captura"><span>07</span> Composición cartera</button>
+        <button class="nav-item" data-view="portafolios" data-permission="captura"><span>08</span> Precios default</button>
+        <button class="nav-item" data-view="portafolios" data-permission="captura"><span>09</span> Rendimientos</button>
+        <button class="nav-item" data-view="portafolios" data-permission="captura"><span>10</span> Posiciones</button>
 
-      <button class="nav-item" data-section="historical">
-        Historical
-      </button>
+        <div class="nav-group-title" data-permission="captura">Indicadores de riesgo</div>
+        <button class="nav-item" data-view="riesgo" data-permission="captura"><span>11</span> Mercado</button>
+        <button class="nav-item" data-view="riesgo" data-permission="captura"><span>12</span> Liquidez</button>
+        <button class="nav-item" data-view="riesgo" data-permission="captura"><span>13</span> Crédito</button>
+        <button class="nav-item" data-view="riesgo" data-permission="captura"><span>14</span> Inflación</button>
 
-      <button class="nav-item" data-section="portfolio">
-        Portfolio
-      </button>
-
-      <button class="nav-item" data-section="mandates">
-        Mandates
-      </button>
-
-      <button class="nav-item" data-section="instruments">
-        Instruments
-      </button>
-
-      <button class="nav-item" data-section="lab">
-        Lab
-      </button>
-
-    </nav>
-
-    <div class="sidebar-footer">
-
-      <div class="api-status">
-        <span id="statusDot" class="status-dot"></span>
-        <span id="statusText">Conectando API...</span>
+        
+      </nav>
+      
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        <span>API RiskLab 1.0.4</span>
       </div>
+    </aside>
 
+    <main class="main">
+      <header class="topbar">
+        
+<button
+  id="mobile-nav-toggle"
+  class="mobile-nav-toggle"
+  type="button"
+  aria-label="Abrir menú de navegación"
+  aria-expanded="false"
+  aria-controls="mobile-navigation"
+>
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+        <div>
+          <div class="eyebrow">INSTITUTO DE SEGURIDAD SOCIAL DEL ESTADO DE GUANAJUATO</div>
+          <h1 id="view-title">Visor</h1>
+        </div>
+        
+<div class="topbar-right">
+  <div class="data-status" id="api-status">Conectando…</div>
+  <div class="date-chip" id="current-date">—</div>
+
+  <div class="user-identity" id="user-identity" hidden>
+    <div class="user-avatar" aria-hidden="true">U</div>
+    <div class="user-identity-text">
+      <strong id="user-username">Usuario</strong>
+      <span id="user-role">Perfil de acceso</span>
+    </div>
+  </div>
+</div>
+
+      </header>
+
+      <section class="content">
+        <div id="view-visor" class="view">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">VISOR</div>
+              <h2>Situación de riesgo</h2>
+              <p>Metodología de cálculo: Paramétrico-Dinámico al 99% de confianza.</p>
+            </div>
+            <div class="source-badge">Composición de Cartera: Dirección de Inversiones</div>
+          </div>
+
+          
+
+
+
+
+          
+<div id="view-captura" class="view" hidden>
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">GESTIÓN DE INFORMACIÓN</div>
+      <h2>Captura de información</h2>
+      <p>Registro de información para el monitor de riesgos.</p>
+    </div>
+  </div>
+
+  <form id="capture-form" class="capture-form">
+    <label for="capture-date">Fecha de información</label>
+    <input id="capture-date" name="fecha"
+           type="date" required>
+
+    <label for="capture-category">Categoría</label>
+    <select id="capture-category" name="categoria" required>
+      <option value="">Selecciona una categoría</option>
+      <option value="cartera">Cartera</option>
+      <option value="riesgo">Riesgo</option>
+      <option value="mercado">Mercado</option>
+    </select>
+
+    <label for="capture-description">Descripción</label>
+    <textarea id="capture-description" name="descripcion"
+              rows="4" maxlength="1000" required></textarea>
+
+    <button type="submit" class="nav-item">
+      Validar captura
+    </button>
+
+    <p id="capture-message" role="status" aria-live="polite"></p>
+  </form>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <span>Valor de mercado</span>
+              <strong id="kpi-vm">—</strong>
+              <small>mdp</small>
+            </article>
+            <article class="kpi-card">
+              <span>Monto invertido</span>
+              <strong id="kpi-inversion">—</strong>
+              <small>mdp</small>
+            </article>
+            <article class="kpi-card">
+              <span>VaR portafolio</span>
+              <strong id="kpi-var">—</strong>
+              <small>del valor de mercado</small>
+            </article>
+            <article class="kpi-card">
+              <span>Límite de política</span>
+              <strong id="kpi-limite">—</strong>
+              <small>VaR</small>
+            </article>
+          </div>
+
+          <section class="risk-control panel">
+            <div class="panel-head">
+              <div>
+                <span class="panel-index">R01</span>
+                <h3>Control VaR</h3>
+              </div>
+              <span id="var-status" class="status-pill">—</span>
+            </div>
+            <div class="risk-bar">
+              <div class="risk-fill" id="risk-fill"></div>
+              <div class="risk-limit" style="left: 100%"></div>
+            </div>
+            <div class="risk-scale">
+              <span>0%</span>
+              <span id="risk-utilization">—</span>
+              <span>1.20%</span>
+            </div>
+          </section>
+
+          <div class="section-head compact">
+            <div>
+              <div class="section-kicker">PORTAFOLIOS</div>
+              <h2>Comparativo de exposición</h2>
+            </div>
+          </div>
+
+          <div class="portfolio-grid">
+            <article class="portfolio-card panel">
+              <div class="portfolio-title">
+                <div><span class="portfolio-tag">P01</span><h3>Portafolio completo</h3></div>
+                <span class="live-dot">ACTUAL</span>
+              </div>
+              <div class="metric-table" id="complete-table"></div>
+            </article>
+
+            <article class="portfolio-card panel">
+              <div class="portfolio-title">
+                <div><span class="portfolio-tag">P02</span><h3>Portafolio restringido</h3></div>
+                <span class="live-dot">ACTUAL</span>
+              </div>
+              <div class="metric-table" id="restricted-table"></div>
+            </article>
+          </div>
+
+          <div class="chart-grid">
+            <article class="chart-card panel">
+              <div class="panel-head">
+                <div><span class="panel-index">H01</span><h3>Valor de mercado vs. monto invertido</h3></div>
+                <span class="unit-label">mdp</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-vm"></canvas></div>
+            </article>
+
+            <article class="chart-card panel">
+              <div class="panel-head">
+                <div><span class="panel-index">H02</span><h3>VaR portafolio vs. límite de política</h3></div>
+                <span class="unit-label">%</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-var"></canvas></div>
+            </article>
+          </div>
+        </div>
+
+<div id="view-historico" class="view" hidden>
+
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">HISTÓRICO</div>
+      <h2>Comparativo histórico</h2>
+      <p>Consulta y comparación de dos fechas de la serie histórica. Universo 2012 - 2026</p>
+    </div>
+    <div class="source-badge">Fuente: Coordinación de Riesgos Financieros - VaR Dinámico (SH)</div>
+  </div>
+
+  <!-- SELECTORES DE FECHA -->
+  <section class="history-controls panel">
+
+    <div class="history-date-control">
+      <label for="history-date-a">Primer fecha</label>
+      <input type="date" id="history-date-a">
     </div>
 
-  </aside>
+    <div class="history-date-control">
+      <label for="history-date-b">Segunda fecha</label>
+      <input type="date" id="history-date-b">
+    </div>
 
-  <!-- =========================
-       MAIN
-  ========================== -->
+    <button id="history-compare-btn" class="history-button">
+      Comparar fechas
+    </button>
 
-  <main class="main">
+    <div id="history-status" class="history-status">
+      Selecciona dos fechas.
+    </div>
 
-    <header class="topbar">
+  </section>
 
+  <!-- RESUMEN COMPARATIVO -->
+  <section class="panel history-summary">
+
+    <div class="panel-head">
       <div>
-        <div class="page-title">Risk Overview</div>
-        <div class="page-subtitle">
-          Consolidated portfolio risk information
-        </div>
+        <span class="panel-index">C01</span>
+        <h3>Comparativo</h3>
       </div>
 
-      <div class="topbar-right">
+      <span id="history-comparison-date" class="unit-label">—</span>
+    </div>
 
-        <div id="dateBadge" class="date-badge">
-          —
+    <div id="history-comparison-table" class="metric-table">
+      <div class="history-empty">
+        Selecciona dos fechas para generar el comparativo.
+      </div>
+    </div>
+
+  </section>
+
+  <!-- GRÁFICOS EXCLUSIVOS DE HISTÓRICO -->
+  <div class="chart-grid history-chart-grid">
+
+    <article class="chart-card panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-index">C02</span>
+          <h3>Valor de mercado</h3>
         </div>
-
-        <div id="versionBadge" class="version-badge">
-          API —
-        </div>
-
+        <span class="unit-label">mdp</span>
       </div>
 
-    </header>
+      <div class="chart-wrap">
+        <canvas id="history-chart-vm"></canvas>
+      </div>
+    </article>
 
-    <section class="content">
-
-      <!-- =========================
-           ERROR
-      ========================== -->
-
-      <div id="errorBox" class="error hidden"></div>
-
-      <!-- =========================
-           LOADING
-      ========================== -->
-
-      <div id="loading" class="panel">
-        <div class="loading">
-          Cargando información de RiskLab...
+    <article class="chart-card panel">
+      <div class="panel-head">
+        <div>
+          <span class="panel-index">C03</span>
+          <h3>VaR portafolio vs. límite</h3>
         </div>
+        <span class="unit-label">%</span>
       </div>
 
-      <!-- =========================
-           DASHBOARD
-      ========================== -->
-
-      <div id="dashboard" class="hidden">
-
-        <!-- KPI -->
-
-        <div class="kpi-grid">
-
-          <div class="kpi">
-            <div class="kpi-label">
-              Valor de Mercado
-            </div>
-
-            <div id="kpiMarketValue" class="kpi-value">
-              —
-            </div>
-
-            <div class="kpi-unit">
-              MDP
-            </div>
-          </div>
-
-          <div class="kpi">
-            <div class="kpi-label">
-              Volatilidad
-            </div>
-
-            <div id="kpiVolatility" class="kpi-value">
-              —
-            </div>
-
-            <div class="kpi-unit">
-              %
-            </div>
-          </div>
-
-          <div class="kpi">
-            <div class="kpi-label">
-              VaR Portafolio
-            </div>
-
-            <div id="kpiVaR" class="kpi-value">
-              —
-            </div>
-
-            <div class="kpi-unit">
-              %
-            </div>
-          </div>
-
-          <div class="kpi">
-            <div class="kpi-label">
-              CVaR
-            </div>
-
-            <div id="kpiCVaR" class="kpi-value">
-              —
-            </div>
-
-            <div class="kpi-unit">
-              %
-            </div>
-          </div>
-
-        </div>
-
-
-        <!-- PORTFOLIO / MANDATES -->
-
-        <div class="dashboard-grid">
-
-          <!-- PORTFOLIO -->
-
-          <section class="panel">
-
-            <div class="panel-header">
-
-              <div>
-                <div class="panel-title">
-                  Portafolio Completo
-                </div>
-
-                <div class="panel-subtitle">
-                  Métricas consolidadas de riesgo
-                </div>
-              </div>
-
-            </div>
-
-            <div class="metric-grid">
-
-              <div class="metric">
-                <div class="metric-label">
-                  Valor de Mercado
-                </div>
-
-                <div id="metricMarketValue" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Monto de Inversión
-                </div>
-
-                <div id="metricInvestment" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Volatilidad
-                </div>
-
-                <div id="metricVolatility" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Duración
-                </div>
-
-                <div id="metricDuration" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Convexidad
-                </div>
-
-                <div id="metricConvexity" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Plazo Promedio Ponderado
-                </div>
-
-                <div id="metricTerm" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  VaR Portafolio
-                </div>
-
-                <div id="metricVaR" class="metric-value">
-                  —
-                </div>
-              </div>
-
-              <div class="metric">
-                <div class="metric-label">
-                  Límite de Política
-                </div>
-
-                <div id="metricLimit" class="metric-value">
-                  —
-                </div>
-              </div>
-
-            </div>
-
-          </section>
-
-
-          <!-- MANDATES -->
-
-          <section class="panel">
-
-            <div class="panel-header">
-
-              <div>
-                <div class="panel-title">
-                  Mandatarios
-                </div>
-
-                <div class="panel-subtitle">
-                  Vigentes e históricos
-                </div>
-              </div>
-
-            </div>
-
-            <div class="panel-body">
-
-              <div class="mandate-list">
-
-                <!-- BNP -->
-
-                <div class="mandate">
-
-                  <div>
-                    <div class="mandate-name">
-                      BNP
-                    </div>
-
-                    <div class="mandate-status">
-                      Vigente
-                    </div>
-                  </div>
-
-                  <div id="mandateBNP" class="mandate-value">
-                    —
-                  </div>
-
-                </div>
-
-
-                <!-- GBM -->
-
-                <div class="mandate historical">
-
-                  <div>
-                    <div class="mandate-name">
-                      GBM
-                    </div>
-
-                    <div class="mandate-status">
-                      Histórico · sin seguimiento vigente
-                    </div>
-                  </div>
-
-                  <div id="mandateGBM" class="mandate-value">
-                    —
-                  </div>
-
-                </div>
-
-
-                <!-- BANORTE -->
-
-                <div class="mandate historical">
-
-                  <div>
-                    <div class="mandate-name">
-                      BANORTE
-                    </div>
-
-                    <div class="mandate-status">
-                      Histórico · sin seguimiento vigente
-                    </div>
-                  </div>
-
-                  <div id="mandateBANORTE" class="mandate-value">
-                    —
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-
-        </div>
-
-
-        <!-- RESTRICTED -->
-
-        <section class="panel" style="margin-bottom:18px;">
-
-          <div class="panel-header">
-
-            <div>
-              <div class="panel-title">
-                Portafolio Restringido
-              </div>
-
-              <div class="panel-subtitle">
-                Información proveniente del bloque restringido del contrato
-              </div>
-            </div>
-
-          </div>
-
-          <div class="table-wrap">
-
-            <table>
-
-              <thead>
-
-                <tr>
-                  <th>Indicador</th>
-                  <th>Valor</th>
-                  <th>Unidad</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                <tr>
-                  <td>Valor de Mercado</td>
-                  <td id="restrictedMarket">—</td>
-                  <td>MDP</td>
-                </tr>
-
-                <tr>
-                  <td>Volatilidad</td>
-                  <td id="restrictedVolatility">—</td>
-                  <td>%</td>
-                </tr>
-
-                <tr>
-                  <td>Duración</td>
-                  <td id="restrictedDuration">—</td>
-                  <td>años</td>
-                </tr>
-
-                <tr>
-                  <td>Convexidad</td>
-                  <td id="restrictedConvexity">—</td>
-                  <td>años²</td>
-                </tr>
-
-                <tr>
-                  <td>Plazo Promedio Ponderado</td>
-                  <td id="restrictedTerm">—</td>
-                  <td>pesos</td>
-                </tr>
-
-                <tr>
-                  <td>VaR Portafolio</td>
-                  <td id="restrictedVaR">—</td>
-                  <td>%</td>
-                </tr>
-
-                <tr>
-                  <td>CVaR</td>
-                  <td id="restrictedCVaR">—</td>
-                  <td>%</td>
-                </tr>
-
-                <tr>
-                  <td>Límite de Política</td>
-                  <td id="restrictedLimit">—</td>
-                  <td>MDP</td>
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </section>
-
-
-        <!-- ADMINISTRATORS -->
-
-        <section class="panel">
-
-          <div class="panel-header">
-
-            <div>
-              <div class="panel-title">
-                Administradores
-              </div>
-
-              <div class="panel-subtitle">
-                VaR, valor de mercado y volatilidad
-              </div>
-            </div>
-
-          </div>
-
-          <div class="table-wrap">
-
-            <table>
-
-              <thead>
-
-                <tr>
-                  <th>Administrador</th>
-                  <th>VaR</th>
-                  <th>Valor de Mercado (MDP)</th>
-                  <th>Volatilidad</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                <tr>
-                  <td>Alfa</td>
-                  <td id="admVaRAlfa">—</td>
-                  <td id="admVMAlfa">—</td>
-                  <td id="admVolAlfa">—</td>
-                </tr>
-
-                <tr>
-                  <td>Calce</td>
-                  <td id="admVaRCalce">—</td>
-                  <td id="admVMCalce">—</td>
-                  <td id="admVolCalce">—</td>
-                </tr>
-
-                <tr>
-                  <td>Liquidez</td>
-                  <td id="admVaRLiquidez">—</td>
-                  <td id="admVMLiquidez">—</td>
-                  <td id="admVolLiquidez">—</td>
-                </tr>
-
-                <tr>
-                  <td>Operativo</td>
-                  <td id="admVaROperativo">—</td>
-                  <td id="admVMOperativo">—</td>
-                  <td id="admVolOperativo">—</td>
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </section>
-
+      <div class="chart-wrap">
+        <canvas id="history-chart-var"></canvas>
       </div>
+    </article>
 
-    </section>
-
-  </main>
+  </div>
 
 </div>
 
 
-<script>
 
-  /* ==========================================================
-     RISKLAB API
-  ========================================================== */
+<!-- =====================================================
+     07 · CARTERA — CAPTURA Y ANÁLISIS A:M
+     ===================================================== -->
+<div id="view-cartera" class="view" hidden>
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">INVERSIONES · COMPOSICIÓN</div>
+      <h2>Composición diaria de la cartera de inversiones</h2>
+      <p>Recepción de la tabla original y matrices de análisis para el cálculo de rendimientos diarios.</p>
+    </div>
+    <div class="source-badge">Procesamiento local</div>
+  </div>
+
+  <article class="panel cartera-capture-panel">
+    <label for="cartera-input">INST LP</label>
+    <p class="capture-help">
+      Origen: INST LP del insumo diario provisto por la Dirección de Inversiones, considera desde INSTRUMENTO hasta ID, incluyendo o no la fila de encabezados.
+    </p>
+
+    <textarea id="cartera-input" rows="9"
+      placeholder="INSTRUMENTO&#9;INICIO PAPEL&#9;VENC PAPEL&#9;MOI COMPRA&#9;TITULOS&#9;PRECIO&#9;VALOR EN LIBROS&#9;TASA&#9;OPERACION&#9;TASA PACTADA&#9;OBSERVACIONES&#9;PORTAFOLIO&#9;ID"
+      spellcheck="false"></textarea>
+
+    <div class="cartera-actions">
+      <button type="button" class="btn-primary" id="cartera-process">Procesar información</button>
+      <button type="button" class="btn-secondary" id="cartera-example">Cargar ejemplo</button>
+      <button type="button" class="btn-secondary" id="cartera-clear">Limpiar</button>
+    </div>
+    <p id="cartera-message" class="capture-help" role="status" aria-live="polite">
+      Aún no se ha procesado información.
+    </p>
+  </article>
+
+  <div id="cartera-results" hidden>
+    <div class="cartera-kpis">
+      <article class="panel"><span>Registros</span><strong id="cartera-count-rows">0</strong></article>
+      <article class="panel"><span>Instrumentos únicos</span><strong id="cartera-count-instruments">0</strong></article>
+      <article class="panel"><span>Portafolios</span><strong id="cartera-count-l">0</strong></article>
+    </div>
+
+    <article class="panel cartera-result-panel">
+      <h3>Filtros de consulta</h3>
+      <p class="capture-help">Cada filtro es independiente; puedes combinar varios. «Todos» no limita esa dimensión.</p>
+      <div class="cartera-filter-grid">
+        <label>Instrumento (A)
+          <select id="cartera-filter-a"><option value="">Todos los instrumentos</option></select>
+        </label>
+        <label>Observaciones (K)
+          <select id="cartera-filter-k"><option value="">Todas las observaciones</option></select>
+        </label>
+        <label>Portafolio (L)
+          <select id="cartera-filter-l"><option value="">Todos los portafolios</option></select>
+        </label>
+        <label>Tasa (H)
+          <select id="cartera-filter-h"><option value="">Todas las tasas</option></select>
+        </label>
+        <label>Operación (I)
+          <select id="cartera-filter-i"><option value="">Todas las operaciones</option></select>
+        </label>
+      </div>
+      
+<button type="button" class="btn-secondary cartera-reset-dark" id="cartera-reset-filters">
+  Restablecer filtros
+</button>
+
+    </article>
+
+    <article class="panel cartera-result-panel">
+      <h3>Resumen del instrumento</h3>
+      <p class="capture-help">Los importes se agregan por el valor exacto de A dentro de los filtros activos.</p>
+      <div class="cartera-kpis cartera-summary-kpis">
+        <article class="panel"><span>Valor del portafolio</span><strong id="cartera-sum-market">$0.00</strong></article>
+        <article class="panel"><span>MOI compra</span><strong id="cartera-sum-moi">$0.00</strong></article>
+        <article class="panel"><span>Valor en libros</span><strong id="cartera-sum-books">$0.00</strong></article>
+      </div>
+      <p id="cartera-summary-note" class="capture-help"></p>
+    </article>
+
+
+<article class="panel cartera-result-panel">
+  <details class="cartera-accordion">
+    <summary>Vista previa de la tabla recibida</summary>
+    <div class="cartera-accordion-content">
+      <p class="capture-help">
+        Se conservan las filas originales que cumplen los filtros, incluidos los duplicados.
+      </p>
+      <div class="cartera-table-wrap">
+        <table class="cartera-table">
+          <thead>
+            <tr>
+              <th>INSTRUMENTO (A)</th>
+              <th>INICIO (B)</th>
+              <th>VENC. (C)</th>
+              <th>MOI COMPRA (D)</th>
+              <th>TÍTULOS (E)</th>
+              <th>PRECIO (F)</th>
+              <th>VALOR LIBROS (G)</th>
+              <th>TASA (H)</th>
+              <th>OPERACIÓN (I)</th>
+              <th>TASA PACTADA (J)</th>
+              <th>OBSERVACIONES (K)</th>
+              <th>PORTAFOLIO (L)</th>
+              <th>ID (M)</th>
+            </tr>
+          </thead>
+          <tbody id="cartera-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+</article>
+
+
+
+<div class="cartera-lists-grid">
+
+  <article class="panel cartera-result-panel">
+    <details class="cartera-accordion">
+      <summary>Instrumentos únicos por OBSERVACIONES (K)</summary>
+      <div class="cartera-accordion-content">
+        <div id="cartera-lists-k"></div>
+      </div>
+    </details>
+  </article>
+
+  <article class="panel cartera-result-panel">
+    <details class="cartera-accordion">
+      <summary>Instrumentos únicos por PORTAFOLIO (L)</summary>
+      <div class="cartera-accordion-content">
+        <div id="cartera-lists-l"></div>
+      </div>
+    </details>
+  </article>
+
+  <article class="panel cartera-result-panel">
+    <details class="cartera-accordion">
+      <summary>Instrumentos únicos por TASA (H)</summary>
+      <div class="cartera-accordion-content">
+        <div id="cartera-lists-h"></div>
+      </div>
+    </details>
+  </article>
+
+  <article class="panel cartera-result-panel">
+    <details class="cartera-accordion">
+      <summary>Instrumentos únicos por OPERACIÓN (I)</summary>
+      <div class="cartera-accordion-content">
+        <div id="cartera-lists-i"></div>
+      </div>
+    </details>
+  </article>
+
+</div>
+
+
+
+<article class="panel cartera-result-panel">
+  <details class="cartera-accordion">
+    <summary>Resumen agregado por instrumento</summary>
+    <div class="cartera-accordion-content">
+      <p class="capture-help">
+        Una fila por instrumento A. Los totales respetan los filtros K, L, H e I; si eliges un instrumento, el resumen se limita a él.
+      </p>
+      <div class="cartera-table-wrap">
+        <table class="cartera-table">
+          <thead>
+            <tr>
+              <th>Instrumento</th>
+              <th>Filas</th>
+              <th>Valor de mercado</th>
+              <th>MOI compra (D)</th>
+              <th>Valor en libros (G)</th>
+            </tr>
+          </thead>
+          <tbody id="cartera-summary-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+</article>
+
+</div>
+</div>
+        
+<!-- =========================================================
+     03 PORTAFOLIOS
+     ========================================================= -->
+
+<div id="view-portafolios" class="view" hidden>
+
+  <div class="section-head">
+
+    <div>
+
+      <div class="section-kicker">
+        PORTAFOLIOS
+      </div>
+
+      <h2>
+        Administración de portafolios
+      </h2>
+
+      <p>
+        Valor de mercado, valor en riesgo y volatilidad
+        de los portafolios administrados.
+      </p>
+
+    </div>
+
+    <div class="source-badge">
+      Fuente: VaR Dinámico (Simulación Histórica)
+    </div>
+
+  </div>
 
-  /*
-   * IMPORTANTE:
-   * Sustituye esta URL por la URL /exec de tu implementación
-   * de Apps Script.
-   */
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbyWUQawZZ5XkBCw_PDr0hZsuXBDVl5bm8YZRkRwv2qbDXxoiXuhBMuTI3_8XEJqIuBL/exec";
+  <!-- =======================================================
+       RESUMEN DE LOS CUATRO PORTAFOLIOS
+       ======================================================= -->
 
+  <section class="portfolio-summary-grid">
 
-  /* ==========================================================
-     ESTADO
-  ========================================================== */
 
-  let riskLabData = null;
+    <!-- ALFA -->
 
+    <article class="panel portfolio-card">
 
-  /* ==========================================================
-     UTILIDADES
-  ========================================================== */
+      <div class="portfolio-card-head">
 
-  function setText(id, value) {
+        <div>
+          <span class="panel-index">P01</span>
+          <span class="portfolio-name">ALFA</span>
+        </div>
 
-    const element = document.getElementById(id);
+        <span class="portfolio-code">
+          ALFA
+        </span>
 
-    if (!element) {
-      return;
-    }
+      </div>
 
-    element.textContent = value;
+      <div
+        class="portfolio-main-value"
+        id="portfolio-alfa-vm"
+      >
+        —
+      </div>
 
-  }
+      <div class="portfolio-unit">
+        VALOR DE MERCADO · MDP
+      </div>
 
+      <div class="portfolio-metrics">
 
-  function isNumber(value) {
+        <div>
+          <span>VALOR EN RIESGO</span>
+          <strong id="portfolio-alfa-var">—</strong>
+        </div>
 
-    return typeof value === "number" &&
-           Number.isFinite(value);
+        <div>
+          <span>VOLATILIDAD</span>
+          <strong id="portfolio-alfa-vol">—</strong>
+        </div>
 
-  }
+      </div>
 
+    </article>
 
-  function formatNumber(value, decimals = 2) {
 
-    if (!isNumber(value)) {
-      return "—";
-    }
+    <!-- CALCE -->
 
-    return value.toLocaleString("es-MX", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
+    <article class="panel portfolio-card">
 
-  }
+      <div class="portfolio-card-head">
 
+        <div>
+          <span class="panel-index">P02</span>
+          <span class="portfolio-name">CALCE</span>
+        </div>
 
-  function formatPercent(value, decimals = 2) {
+        <span class="portfolio-code">
+          CALCE
+        </span>
 
-    if (!isNumber(value)) {
-      return "—";
-    }
+      </div>
 
-    return (
-      value * 100
-    ).toLocaleString("es-MX", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    }) + "%";
+      <div
+        class="portfolio-main-value"
+        id="portfolio-calce-vm"
+      >
+        —
+      </div>
 
-  }
+      <div class="portfolio-unit">
+        VALOR DE MERCADO · MDP
+      </div>
 
+      <div class="portfolio-metrics">
 
-  function formatMDP(value, decimals = 2) {
+        <div>
+          <span>VALOR EN RIESGO</span>
+          <strong id="portfolio-calce-var">—</strong>
+        </div>
 
-    if (!isNumber(value)) {
-      return "—";
-    }
+        <div>
+          <span>VOLATILIDAD</span>
+          <strong id="portfolio-calce-vol">—</strong>
+        </div>
 
-    return (
-      "$" +
-      value.toLocaleString("es-MX", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      }) +
-      " MDP"
-    );
+      </div>
 
-  }
+    </article>
 
 
-  function formatPesos(value, decimals = 0) {
+    <!-- LIQUIDEZ -->
 
-    if (!isNumber(value)) {
-      return "—";
-    }
+    <article class="panel portfolio-card">
 
-    return (
-      "$" +
-      value.toLocaleString("es-MX", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      })
-    );
+      <div class="portfolio-card-head">
 
-  }
+        <div>
+          <span class="panel-index">P03</span>
+          <span class="portfolio-name">LIQUIDEZ</span>
+        </div>
 
+        <span class="portfolio-code">
+          LIQUIDEZ
+        </span>
 
-  function safeGet(object, path) {
+      </div>
 
-    return path
-      .split(".")
-      .reduce(
-        (current, key) =>
-          current != null
-            ? current[key]
-            : null,
-        object
-      );
+      <div
+        class="portfolio-main-value"
+        id="portfolio-liquidez-vm"
+      >
+        —
+      </div>
 
-  }
+      <div class="portfolio-unit">
+        VALOR DE MERCADO · MDP
+      </div>
 
+      <div class="portfolio-metrics">
 
-  /* ==========================================================
-     API
-  ========================================================== */
+        <div>
+          <span>VALOR EN RIESGO</span>
+          <strong id="portfolio-liquidez-var">—</strong>
+        </div>
 
-async function fetchLatest() {
+        <div>
+          <span>VOLATILIDAD</span>
+          <strong id="portfolio-liquidez-vol">—</strong>
+        </div>
 
-  if (!API_URL) {
+      </div>
 
-    throw new Error(
-      "87AS8D7A9S8D7A98SD7A98SD789ASD Falta configurar API_URL en index.html."
-    );
+    </article>
 
-  }
 
-  const response = await fetch(
-    API_URL + "?action=latest",
-    {
-      method: "GET",
-      cache: "no-store"
-    }
-  );
+    <!-- OPERATIVO -->
 
-  if (!response.ok) {
+    <article class="panel portfolio-card">
 
-    throw new Error(
-      "La API respondió con HTTP " +
-      response.status
-    );
+      <div class="portfolio-card-head">
 
-  }
+        <div>
+          <span class="panel-index">P04</span>
+          <span class="portfolio-name">OPERATIVO</span>
+        </div>
 
-  const json = await response.json();
+        <span class="portfolio-code">
+          OPERATIVO
+        </span>
 
-  if (!json.ok) {
+      </div>
 
-    throw new Error(
-      "La API devolvió ok=false."
-    );
+      <div
+        class="portfolio-main-value"
+        id="portfolio-operativo-vm"
+      >
+        —
+      </div>
 
-  }
+      <div class="portfolio-unit">
+        VALOR DE MERCADO · MDP
+      </div>
 
-  return json;
-}
+      <div class="portfolio-metrics">
 
+        <div>
+          <span>VALOR EN RIESGO</span>
+          <strong id="portfolio-operativo-var">—</strong>
+        </div>
 
-  /* ==========================================================
-     RENDER
-  ========================================================== */
+        <div>
+          <span>VOLATILIDAD</span>
+          <strong id="portfolio-operativo-vol">—</strong>
+        </div>
 
-  function renderDashboard(response) {
+      </div>
 
-    riskLabData = response.data;
+    </article>
 
+  </section>
 
-    const portfolio =
-      safeGet(
-        riskLabData,
-        "portafolio.completo"
-      );
 
+  <!-- =======================================================
+       TABLA
+       ======================================================= -->
 
-    const restricted =
-      safeGet(
-        riskLabData,
-        "portafolio.restringido"
-      );
+  <section class="panel portfolio-table-panel">
 
+    <div class="panel-head">
 
-    const historicalMandates =
-      safeGet(
-        riskLabData,
-        "mantatario.valorenriesgo"
-      );
+      <div>
 
+        <span class="panel-index">
+          P05
+        </span>
 
-    const currentMandates =
-      safeGet(
-        riskLabData,
-        "mandatario.valorenriesgo"
-      );
+        <h3>
+          Administración de portafolios
+        </h3>
 
+      </div>
 
-    const administrators =
-      safeGet(
-        riskLabData,
-        "administrador"
-      );
+      <span
+        id="portfolio-date"
+        class="unit-label"
+      >
+        —
+      </span>
 
+    </div>
 
-    /* =========================
-       METADATA
-    ========================= */
+    <div
+      id="portfolio-table"
+      class="portfolio-table"
+    >
 
-    setText(
-      "dateBadge",
-      response.metadata.fecha
-    );
+      <div class="portfolio-empty">
+        Cargando información de G00...
+      </div>
 
+    </div>
 
-    setText(
-      "versionBadge",
-      "API " +
-      response.metadata.apiVersion
-    );
+  </section>
 
 
-    /* =========================
-       KPI
-    ========================= */
+  <!-- =======================================================
+       GRÁFICO COMPARATIVO
+       ======================================================= -->
 
-    setText(
-      "kpiMarketValue",
-      formatNumber(
-        portfolio?.valormercadomdp,
-        0
-      )
-    );
+  <section class="panel portfolio-chart-panel">
 
+    <div class="panel-head">
 
-    setText(
-      "kpiVolatility",
-      formatPercent(
-        portfolio?.volatilidad,
-        2
-      )
-    );
+      <div>
 
+        <span class="panel-index">
+          P06
+        </span>
 
-    setText(
-      "kpiVaR",
-      formatPercent(
-        portfolio?.monto?.porcentaje,
-        2
-      )
-    );
+        <h3>
+          VaR comparativo
+        </h3>
 
+      </div>
 
-    setText(
-      "kpiCVaR",
-      formatPercent(
-        portfolio?.condicional?.porcentaje,
-        2
-      )
-    );
+      <span class="unit-label">
+        %
+      </span>
 
+    </div>
 
-    /* =========================
-       PORTFOLIO
-    ========================= */
+    <div class="chart-wrap portfolio-chart-wrap">
 
-    setText(
-      "metricMarketValue",
-      formatNumber(
-        portfolio?.valormercadomdp,
-        0
-      ) + " MDP"
-    );
+      <canvas id="portfolio-var-chart"></canvas>
 
+    </div>
 
-    setText(
-      "metricInvestment",
-      formatNumber(
-        portfolio?.montoinvertido / 1000000,
-        2
-      ) + " MDP"
-    );
+  </section>
 
+</div>
 
-    setText(
-      "metricVolatility",
-      formatPercent(
-        portfolio?.volatilidad,
-        2
-      )
-    );
+<div id="view-riesgo" class="view" hidden>
 
+  <!-- =====================================================
+       07 · BASES DE DATOS
+       ===================================================== -->
 
-    setText(
-      "metricDuration",
-      formatNumber(
-        portfolio?.duracion,
-        4
-      ) + " años"
-    );
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">BASES DE DATOS</div>
+      <h2>Cortes históricos y datos disponibles descargables (2010 - 2026)</h2>
+      <p>Tasas nominales [Bonos M (Yields)] y tasas reales [Real Bruta (Yields)]</p>
+    </div>
+    <div class="source-badge">Proveedor de precios: Valmer - Grupo BMV</div>
+  </div>
 
+  <!-- =====================================================
+       T01 · ÚLTIMO CORTE
+       ===================================================== -->
 
-    setText(
-      "metricConvexity",
-      formatNumber(
-        portfolio?.convexidad,
-        4
-      )
-    );
+<section class="panel tasas-panel">
 
+  <div class="panel-header">
 
-    setText(
-      "metricTerm",
-      formatNumber(
-        portfolio?.plazo,
-        0
-      )
-    );
+    <div>
+      <span class="panel-index">T01</span>
 
+      <h3 class="panel-title">
+        Último corte
+      </h3>
 
-    setText(
-      "metricVaR",
-      formatPercent(
-        portfolio?.monto?.porcentaje,
-        2
-      )
-    );
+<p class="panel-subtitle">
+  Descarga de tasas del corte corriente
+</p>
 
+<span
+  id="tasas-actual-periodo"
+  class="tasas-current-period"
+>
+  Cargando corte...
+</span>
+    </div>
 
-    setText(
-      "metricLimit",
-      formatNumber(
-        portfolio?.limitePolitica,
-        2
-      ) + " MDP"
-    );
+    <span class="panel-status">
+      —
+    </span>
 
+  </div>
 
-    /* =========================
-       MANDATARIOS
-    ========================== */
 
-    setText(
-      "mandateBNP",
-      formatPercent(
-        currentMandates?.bnp,
-        2
-      )
-    );
+  <div class="tasas-download">
 
+    <a
+      id="tasas-download-actual-nominal"
+      class="button button-primary"
+      href="#"
+      download
+    >
+      Descargar Bonos M (Yields)
+    </a>
 
-    setText(
-      "mandateGBM",
-      formatPercent(
-        historicalMandates?.gbm,
-        2
-      )
-    );
 
+    <a
+      id="tasas-download-actual-real"
+      class="button"
+      href="#"
+      download
+    >
+      Descargar Real Bruta (Yields)
+    </a>
 
-    setText(
-      "mandateBANORTE",
-      formatPercent(
-        historicalMandates?.banorte,
-        2
-      )
-    );
+  </div>
 
+</section>
 
-    /* =========================
-       RESTRICTED
-    ========================== */
-
-    setText(
-      "restrictedMarket",
-      formatNumber(
-        restricted?.valormercadomdp,
-        0
-      )
-    );
-
-
-    setText(
-      "restrictedVolatility",
-      formatPercent(
-        restricted?.volatilidad,
-        2
-      )
-    );
-
-
-    setText(
-      "restrictedDuration",
-      formatNumber(
-        restricted?.duracion,
-        4
-      )
-    );
-
-
-    setText(
-      "restrictedConvexity",
-      formatNumber(
-        restricted?.convexidad,
-        4
-      )
-    );
-
-
-    setText(
-      "restrictedTerm",
-      formatNumber(
-        restricted?.plazo,
-        0
-      )
-    );
-
-
-    setText(
-      "restrictedVaR",
-      formatPercent(
-        restricted?.monto?.porcentaje,
-        2
-      )
-    );
-
-
-    setText(
-      "restrictedCVaR",
-      formatPercent(
-        restricted?.condicional?.porcentaje,
-        2
-      )
-    );
-
-
-    setText(
-      "restrictedLimit",
-      formatNumber(
-        restricted?.limitePolitica,
-        2
-      )
-    );
-
-
-    /* =========================
-       ADMINISTRADORES
-    ========================== */
-
-    setText(
-      "admVaRAlfa",
-      formatPercent(
-        administrators?.valorenriesgo?.alfa,
-        2
-      )
-    );
-
-    setText(
-      "admVaRCalce",
-      formatPercent(
-        administrators?.valorenriesgo?.calce,
-        2
-      )
-    );
-
-    setText(
-      "admVaRLiquidez",
-      formatPercent(
-        administrators?.valorenriesgo?.liquidez,
-        2
-      )
-    );
-
-    setText(
-      "admVaROperativo",
-      formatPercent(
-        administrators?.valorenriesgo?.operativo,
-        2
-      )
-    );
-
-
-    setText(
-      "admVMAlfa",
-      formatNumber(
-        administrators?.valormercado?.alfa,
-        2
-      )
-    );
+  <!-- =====================================================
+       T02 · CONSULTA Y DESCARGA
+       ===================================================== -->
 
-    setText(
-      "admVMCalce",
-      formatNumber(
-        administrators?.valormercado?.calce,
-        2
-      )
-    );
+<section class="panel tasas-panel">
 
-    setText(
-      "admVMLiquidez",
-      formatNumber(
-        administrators?.valormercado?.liquidez,
-        2
-      )
-    );
+  <button
+    id="tasas-historico-toggle"
+    class="panel-header tasas-panel-toggle"
+    type="button"
+    aria-expanded="false"
+  >
 
-    setText(
-      "admVMOperativo",
-      formatNumber(
-        administrators?.valormercado?.operativo,
-        2
-      )
-    );
+    <div>
 
+      <span class="panel-index">T02</span>
 
-    setText(
-      "admVolAlfa",
-      formatPercent(
-        administrators?.volatilidad?.alfa / 100,
-        2
-      )
-    );
+      <h3 class="panel-title">
+        Consulta y descarga
+      </h3>
 
-    setText(
-      "admVolCalce",
-      formatPercent(
-        administrators?.volatilidad?.calce / 100,
-        2
-      )
-    );
+      <p class="panel-subtitle">
+        Selecciona el corte mensual disponible
+      </p>
 
-    setText(
-      "admVolLiquidez",
-      formatPercent(
-        administrators?.volatilidad?.liquidez / 100,
-        2
-      )
-    );
+    </div>
 
-    setText(
-      "admVolOperativo",
-      formatPercent(
-        administrators?.volatilidad?.operativo / 100,
-        2
-      )
-    );
+    <span
+      id="tasas-historico-arrow"
+      class="tasas-history-arrow"
+    >
+      ▾
+    </span>
 
-  }
+  </button>
 
 
-  /* ==========================================================
-     LOAD
-  ========================================================== */
+  <div
+    id="tasas-historico-content"
+    class="tasas-historico-content"
+    hidden
+  >
 
-  async function loadRiskLab() {
+    <div class="tasas-download">
 
-    const loading =
-      document.getElementById("loading");
+      <div class="tasas-field">
 
-    const dashboard =
-      document.getElementById("dashboard");
+        <label for="tasas-year-select">
+          Año
+        </label>
 
-    const errorBox =
-      document.getElementById("errorBox");
+        <select
+          id="tasas-year-select"
+          class="tasas-select"
+        >
 
-    const statusDot =
-      document.getElementById("statusDot");
+          <option value="">
+            Cargando años...
+          </option>
 
-    const statusText =
-      document.getElementById("statusText");
+        </select>
 
+      </div>
 
-    try {
 
-      loading.classList.remove("hidden");
-      dashboard.classList.add("hidden");
-      errorBox.classList.add("hidden");
+      <div class="tasas-field">
 
+        <label for="tasas-corte-select">
+          Corte
+        </label>
 
-      const response =
-        await fetchLatest();
+        <select
+          id="tasas-corte-select"
+          class="tasas-select"
+          disabled
+        >
 
+          <option value="">
+            Selecciona un año
+          </option>
 
-      renderDashboard(response);
+        </select>
 
+      </div>
 
-      statusDot.classList.add("ok");
-      statusDot.classList.remove("error");
 
-      statusText.textContent =
-        "API conectada";
+      <div class="tasas-download-actions">
 
+        <a
+          id="tasas-download-nominal"
+          class="button button-primary"
+          href="#"
+          download
+        >
+          Descargar Bonos M
+        </a>
 
-      loading.classList.add("hidden");
-      dashboard.classList.remove("hidden");
+        <a
+          id="tasas-download-real"
+          class="button"
+          href="#"
+          download
+        >
+          Descargar Real Bruta
+        </a>
 
+      </div>
 
-    } catch (error) {
+    </div>
 
-      console.error(
-        "RiskLab API error:",
-        error
-      );
+  </div>
 
+</section>
 
-      statusDot.classList.remove("ok");
-      statusDot.classList.add("error");
 
-      statusText.textContent =
-        "Error de API";
+<!-- =====================================================
+     T03 · HISTÓRICO
+     ===================================================== -->
 
+<section class="panel tasas-panel">
 
-      errorBox.textContent =
-        "No fue posible cargar RiskLab. " +
-        error.message;
+  <div class="panel-header">
 
+    <div>
+      <span class="panel-index">T03</span>
 
-      errorBox.classList.remove("hidden");
+      <h3 class="panel-title">
+        Histórico de tasas
+      </h3>
 
-      loading.classList.add("hidden");
+      <p class="panel-subtitle">
+        Evolución mensual de la tasa nominal y real
+      </p>
 
-    }
+      <span
+        id="tasas-chart-periodo"
+        class="tasas-current-period"
+      >
+        Cargando corte...
+      </span>
 
-  }
+    </div>
 
+  </div>
 
-  /* ==========================================================
-     NAVIGATION
-  ========================================================== */
 
-  document
-    .querySelectorAll(".nav-item")
-    .forEach(button => {
+  <div class="chart-wrap tasas-chart-wrap">
 
-      button.addEventListener(
-        "click",
-        () => {
+    <canvas
+      id="tasas-history-chart"
+    ></canvas>
 
-          document
-            .querySelectorAll(".nav-item")
-            .forEach(item =>
-              item.classList.remove("active")
-            );
+  </div>
 
-          button.classList.add("active");
+<div class="tasas-history-longterm">
 
-          /*
-           * En esta primera versión los módulos
-           * todavía no cambian de vista.
-           *
-           * Primero validamos:
-           *
-           * GitHub Pages
-           *       ↓
-           * Apps Script
-           *       ↓
-           * JSON
-           *       ↓
-           * Dashboard
-           */
+  <div class="tasas-history-longterm-header">
 
-        }
-      );
+    <h4 class="tasas-history-longterm-title">
+  Evolución histórica de tasas
+</h4>
 
-    });
+<p class="tasas-history-longterm-subtitle">
+  Últimos seis años de información
+</p>
 
+  </div>
 
-  /* ==========================================================
-     START
-  ========================================================== */
+  <div class="chart-wrap tasas-chart-wrap">
+    <canvas
+      id="tasas-longterm-chart"
+    ></canvas>
+  </div>
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    loadRiskLab
-  );
+</div>
 
-</script>
 
+
+  
+</section>
+
+<!-- =====================================================
+     FIN 07 · BASES DE DATOS
+     ===================================================== -->
+
+</div>
+        
+<!-- ===== aqui quité un maldito </div> ========================================== -->
+
+<!-- =====================================================
+     06 · COSECHAS DE CRÉDITO
+     ===================================================== -->
+
+<div id="view-cosechas" class="view" hidden>
+
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">LABORATORIO · 06</div>
+      <h2>Cosechas de crédito</h2>
+      <p>
+        Consulta de cartera global, tipos de crédito, vigencias, periodos históricos y alertas.
+      </p>
+    </div>
+    <div class="source-badge">Último reporte de saldos: Septimbre</div>
+  </div>
+
+  <section class="panel vintages-panel">
+
+    <div class="vintages-toolbar">
+
+      <div class="vintages-group">
+        <span class="vintages-group-title">00 · Global</span>
+        <div class="vintages-buttons">
+          <button class="vintage-button active"
+                  data-vintage="00_vin-glo.html">
+            Cartera global
+          </button>
+        </div>
+      </div>
+
+      <div class="vintages-group">
+        <span class="vintages-group-title">01 · Tipo de crédito</span>
+        <div class="vintages-buttons">
+          <button class="vintage-button" data-vintage="01_vin-cco.html">
+            Créditos complementarios
+          </button>
+          <button class="vintage-button" data-vintage="01_vin-cjr.html">
+            Créditos junior
+          </button>
+          <button class="vintage-button" data-vintage="01_vin-cvi.html">
+            Créditos viudez
+          </button>
+          <button class="vintage-button" data-vintage="01_vin-pgh.html">
+            Préstamos con garantía hipotecaria
+          </button>
+          <button class="vintage-button" data-vintage="01_vin-ppe.html">
+            Préstamos personales
+          </button>
+        </div>
+      </div>
+
+      <div class="vintages-group">
+        <span class="vintages-group-title">02 · Vigencia</span>
+        <div class="vintages-buttons">
+          <button class="vintage-button" data-vintage="02_vin-cco_vig.html">
+            Créditos complementarios
+          </button>
+          <button class="vintage-button" data-vintage="02_vin-cjr_vig.html">
+            Créditos junior
+          </button>
+          <button class="vintage-button" data-vintage="02_vin-cvi_vig.html">
+            Créditos viudez
+          </button>
+          <button class="vintage-button" data-vintage="02_vin-pgh_vig.html">
+            Préstamos con garantía hipotecaria
+          </button>
+          <button class="vintage-button" data-vintage="02_vin-ppe_vig.html">
+            Préstamos personales
+          </button>
+        </div>
+      </div>
+
+      <div class="vintages-group">
+        <span class="vintages-group-title">03 · Periodos de cosecha</span>
+        <div class="vintages-buttons">
+          <button class="vintage-button" data-vintage="03_vin-18_19.html">
+            Cosechas 2018–2019
+          </button>
+          <button class="vintage-button" data-vintage="03_vin-20_26.html">
+            Cosechas 2020–2026
+          </button>
+        </div>
+      </div>
+
+      <div class="vintages-group">
+        <span class="vintages-group-title">04 · Seguimiento</span>
+        <div class="vintages-buttons">
+          <button class="vintage-button" data-vintage="04_alertas.html">
+            Alertas por tipo de crédito
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="vintages-viewer-header">
+      <span id="vintage-current-title">Cartera global</span>
+      <span class="vintages-viewer-caption">Consulta seleccionada</span>
+    </div>
+
+    <div class="vintages-frame-wrap">
+      <iframe
+        id="vintage-frame"
+        title="Consulta de cosechas de crédito"
+        src="./data/vintages/00_vin-glo.html"
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin">
+      </iframe>
+    </div>
+
+  </section>
+
+</div>
+
+
+
+        
+<div id="view-mandatarios" class="view" hidden>
+
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">MANDATARIOS</div>
+      <h2>Seguimiento de mandatos</h2>
+      <p>
+        Inversiones de renta variable y fondos del Instituto.
+      </p>
+    </div>
+
+    <div class="source-badge">
+      Fuente: Coordinación de Riesgos Financieros
+    </div>
+  </div>
+
+
+  <!-- =====================================================
+       CONTROL DE HISTÓRICOS
+       ===================================================== -->
+
+  <div class="mandatarios-display-control">
+
+    <button
+      id="mandatarios-history-cards-toggle"
+      class="mandatarios-display-button"
+      type="button"
+      aria-expanded="false"
+    >
+      <span id="mandatarios-history-cards-label">
+        Mostrar información de mandatarios liquidados
+      </span>
+    </button>
+
+  </div>
+
+
+  <!-- =====================================================
+       RESUMEN DE MANDATARIOS
+       ===================================================== -->
+
+  <section class="mandatarios-summary-grid">
+
+
+    <!-- BNP -->
+    <article class="mandatario-card panel mandatario-current">
+
+      <div class="mandatario-card-head">
+
+        <div>
+          <span class="panel-index">M01</span>
+          <h3>BNP</h3>
+        </div>
+
+        <span class="mandatario-status current">
+          VIGENTE
+        </span>
+
+      </div>
+
+      <div class="mandatario-metrics">
+
+        <div class="mandatario-metric">
+          <span>Valor de mercado</span>
+          <strong id="mandatario-bnp-vm">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Monto invertido</span>
+          <strong id="mandatario-bnp-inversion">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>VaR</span>
+          <strong id="mandatario-bnp-var">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Volatilidad</span>
+          <strong id="mandatario-bnp-vol">—</strong>
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- BANORTE -->
+    <article
+      class="mandatario-card panel mandatario-historical mandatario-optional"
+      hidden
+    >
+
+      <div class="mandatario-card-head">
+
+        <div>
+          <span class="panel-index">M02</span>
+          <h3>BANORTE</h3>
+        </div>
+        <div id="mandatario-ban-fecha" class="mandatario-fecha"> Fecha liquidación: </div>
+        <span class="mandatario-status historical">
+          LIQUIDADO
+        </span>
+
+      </div>
+
+      <div class="mandatario-metrics">
+
+        <div class="mandatario-metric">
+          <span>Valor de mercado</span>
+          <strong id="mandatario-ban-vm">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Monto invertido</span>
+          <strong id="mandatario-ban-inversion">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>VaR</span>
+          <strong id="mandatario-ban-var">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Volatilidad</span>
+          <strong id="mandatario-ban-vol">—</strong>
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- GBM -->
+    <article
+      class="mandatario-card panel mandatario-historical mandatario-optional"
+      hidden
+    >
+
+      <div class="mandatario-card-head">
+
+        <div>
+          <span class="panel-index">M03</span>
+          <h3>GBM</h3>
+        </div>
+        <div id="mandatario-gbm-fecha" class="mandatario-fecha"> Fecha liquidación: </div>
+        <span class="mandatario-status historical">
+          LIQUIDADO
+        </span>
+
+      </div>
+
+      <div class="mandatario-metrics">
+
+        <div class="mandatario-metric">
+          <span>Valor de mercado</span>
+          <strong id="mandatario-gbm-vm">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Monto invertido</span>
+          <strong id="mandatario-gbm-inversion">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>VaR</span>
+          <strong id="mandatario-gbm-var">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Volatilidad</span>
+          <strong id="mandatario-gbm-vol">—</strong>
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- ESCALA -->
+    <article class="mandatario-card panel mandatario-fund">
+
+      <div class="mandatario-card-head">
+
+        <div>
+          <span class="panel-index">M04</span>
+          <h3>ESCALA</h3>
+        </div>
+
+        <span class="mandatario-status fund">
+          FONDO
+        </span>
+
+      </div>
+
+      <div class="mandatario-metrics">
+
+        <div class="mandatario-metric">
+          <span>Valor de mercado</span>
+          <strong id="mandatario-escala-vm">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Monto invertido</span>
+          <strong id="mandatario-escala-inversion">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>VaR</span>
+          <strong id="mandatario-escala-var">—</strong>
+        </div>
+
+        <div class="mandatario-metric">
+          <span>Volatilidad</span>
+          <strong id="mandatario-escala-vol">—</strong>
+        </div>
+
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- =====================================================
+       GRÁFICO BNP
+       ===================================================== -->
+
+  <section class="panel mandatario-chart-panel">
+
+    <div class="panel-head">
+
+      <div>
+        <span class="panel-index">M05</span>
+        <h3>Valor en Riesgo (BNP) Benchmarks </h3>
+      </div>
+
+      <span class="unit-label">
+        %
+      </span>
+
+    </div>
+
+    <div class="mandatario-chart-meta">
+      <span>Histórico · 251 días</span>
+      <span>Simulación histórica - Paramétrico-Dinámico 99% </span>
+    </div>
+
+    <div class="chart-wrap mandatario-chart-wrap">
+      <canvas id="mandatario-bnp-chart"></canvas>
+    </div>
+
+  </section>
+  <section class="panel mandatario-history-panel">
+
+    <button
+      id="mandatario-history-toggle"
+      class="mandatario-history-toggle"
+      type="button"
+      aria-expanded="false"
+    >
+
+      <div>
+
+        <span class="panel-index">M06</span>
+
+        <div class="mandatario-history-title">
+          Valor en Riesgo (GBM - BANORTE) Benchmarks
+        </div>
+
+        <div class="mandatario-history-subtitle">
+          GBM · BAN · Benchmark (USD)
+        </div>
+
+      </div>
+
+      <span
+        id="mandatario-history-arrow"
+        class="mandatario-history-arrow"
+      >
+        ▾
+      </span>
+
+    </button>
+
+
+    <div
+      id="mandatario-history-content"
+      class="mandatario-history-content"
+      hidden
+    >
+
+      <div class="mandatario-history-note">
+
+        <span>GBM</span>
+        <strong>Último rendimiento calculado: 15/09/2026</strong>
+
+      </div>
+
+      <div class="mandatario-history-note">
+
+        <span>BANORTE</span>
+        <strong>Último rendimiento calculado: 09/06/2026</strong>
+
+      </div>
+
+      <div class="chart-wrap mandatario-history-chart-wrap">
+        <canvas id="mandatario-history-chart"></canvas>
+      </div>
+
+    </div>
+
+  </section>
+
+</div>
+        <div id="error-box" class="error-box" hidden></div>
+      </section>
+    </main>
+  </div>
 </body>
 </html>
-```

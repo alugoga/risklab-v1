@@ -1,212 +1,5575 @@
-document.addEventListener("DOMContentLoaded", async function () {
+const API_URL = "https://script.google.com/macros/s/AKfycbyWUQawZZ5XkBCw_PDr0hZsuXBDVl5bm8YZRkRwv2qbDXxoiXuhBMuTI3_8XEJqIuBL/exec";
+const HISTORY_DAYS = 251;
+const POLICY_LIMIT_PCT = 1.2;
 
-    console.log("RISK LAB: DOM cargado");
+let latestData = null;
+let historyData = [];
+let charts = { vm: null, var: null };
+let portfolioCharts = { var: null };
+let tasasIndice = null;
+let tasasP00 = null;
+let tasasP01 = null;
+// ============================================================
+// GRÁFICOS DEL MÓDULO HISTÓRICO
+// Independientes de los gráficos del VISOR
+// ============================================================
 
-    try {
+let historyCharts = {
+  vm: null,
+  var: null
+};
 
-        console.log(
-            "RISK LAB: cargando datos..."
-        );
-
-        const data =
-            await cargarDatos();
-
-        console.log(
-            "RISK LAB: datos recibidos",
-            data
-        );
-
-        console.log(
-            "RISK LAB: cargando histórico..."
-        );
-
-        const historico =
-            await cargarHistorico();
-
-        console.log(
-            "RISK LAB: histórico recibido",
-            historico
-        );
-
-        renderOverview(data);
-
-        const historicoPreparado =
-            prepararHistorico(
-                historico
-            );
-
-        console.log(
-            "RISK LAB: histórico preparado",
-            historicoPreparado
-        );
-
-        renderMarketValueChart(
-            historico
-        );
-
-        renderRiskProfileChart(
-            historico
-        );
-
-        renderHistoricoMarketValueChart(
-            historico
-        );
-        
-        console.log(
-            "RISK LAB: dashboard renderizado"
-        );
-
-    } catch (error) {
-
-        console.error(
-            "RISK LAB: error",
-            error
-        );
-
-        const statusText =
-            document.querySelector(
-                ".sidebar-bottom .system-status span:last-child"
-            );
-
-        if (statusText) {
-            statusText.textContent =
-                "DATA ERROR";
-        }
-
-        const statusDot =
-            document.querySelector(
-                ".sidebar-bottom .status-dot"
-            );
-
-        if (statusDot) {
-            statusDot.style.background =
-                "#ef6b73";
-
-            statusDot.style.boxShadow =
-                "0 0 7px rgba(239, 107, 115, .45)";
-        }
-
-    }
-
-});
-// ==========================================
-// NAVEGACIÓN ENTRE VISTAS
-// ==========================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        const navItems =
-            document.querySelectorAll(
-                ".nav-item[data-view]"
-            );
-
-        const views =
-            document.querySelectorAll(
-                ".view"
-            );
+let historicalSnapshotA = null;
+let historicalSnapshotB = null;
 
 
-        console.log(
-            "RISK LAB: navegación inicializada",
-            navItems.length,
-            "menús /",
-            views.length,
-            "vistas"
-        );
+const $ = (id) => document.getElementById(id);
+
+function fmtNumber(value, decimals = 2) {
+  if (value === null || value === undefined || value === "") return "—";
+  return Number(value).toLocaleString("es-MX", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function fmtPct(value, decimals = 4) {
+  if (value === null || value === undefined || value === "") return "—";
+  return `${fmtNumber(Number(value) * 100, decimals)}%`;
+}
+
+function fmtMdp(value, decimals = 2) {
+  if (value === null || value === undefined || value === "") return "—";
+  return fmtNumber(value / 1000000, decimals);
+}
+
+function fechaCorta(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return d.toLocaleDateString("es-MX", {day:"2-digit", month:"short"}).replace(".", "");
+}
+
+function fechaLarga(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return d.toLocaleDateString("es-MX", {day:"2-digit", month:"short", year:"numeric"}).toUpperCase();
+}
+
+function pick(obj, paths) {
+  for (const path of paths) {
+    const parts = path.split(".");
+    let value = obj;
+    for (const p of parts) value = value?.[p];
+    if (value !== undefined && value !== null) return value;
+  }
+  return null;
+}
 
 
-        navItems.forEach(
-            function (navItem) {
+function actualizarLinksTasas() {
 
-                navItem.addEventListener(
-                    "click",
-                    function () {
+  const select = $("tasas-corte-select");
+  const linkNominal = $("tasas-download-nominal");
+  const linkReal = $("tasas-download-real");
 
-                        const targetView =
-                            navItem.getAttribute(
-                                "data-view"
-                            );
+  if (
+    !select ||
+    !linkNominal ||
+    !linkReal
+  ) {
+    return;
+  }
 
+  const periodo = select.value;
 
-                        console.log(
-                            "RISK LAB: CLICK",
-                            targetView
-                        );
+  const corte = tasasIndice?.cortes?.find(
+    item => item.periodo === periodo
+  );
 
+  if (!corte) {
 
-                        // --------------------------
-                        // Menú activo
-                        // --------------------------
+    linkNominal.href = "#";
+    linkReal.href = "#";
 
-                        navItems.forEach(
-                            function (item) {
+    linkNominal.removeAttribute("download");
+    linkReal.removeAttribute("download");
 
-                                item.classList.remove(
-                                    "active"
-                                );
+    return;
+  }
 
-                            }
-                        );
+  linkNominal.href =
+    `./data/tasas/${corte.nominal}`;
 
+  linkReal.href =
+    `./data/tasas/${corte.real}`;
 
-                        navItem.classList.add(
-                            "active"
-                        );
+  linkNominal.setAttribute(
+    "download",
+    ""
+  );
 
+  linkReal.setAttribute(
+    "download",
+    "");
 
-                        // --------------------------
-                        // Ocultar vistas
-                        // --------------------------
+  console.log(
+    "RISKLAB TASAS: corte seleccionado:",
+    periodo
+  );
 
-                        views.forEach(
-                            function (view) {
+  console.log(
+    "RISKLAB TASAS: nominal:",
+    linkNominal.href
+  );
 
-                                view.hidden = true;
+  console.log(
+    "RISKLAB TASAS: real:",
+    linkReal.href
+  );
+}
 
-                            }
-                        );
+function renderTasasUltimoCorte() {
 
+  const fecha = $("tasas-ultimo-fecha");
+  const status = $("tasas-status");
+  const body = $("tasas-ultimo-body");
 
-                        // --------------------------
-                        // Mostrar vista seleccionada
-                        // --------------------------
+  if (!fecha || !status || !body) {
+    return;
+  }
 
-                        const selectedView =
-                            document.getElementById(
-                                "view-" + targetView
-                            );
+  if (
+    !tasasIndice ||
+    !Array.isArray(tasasIndice.cortes) ||
+    !tasasIndice.actual
+  ) {
 
-if (selectedView) {
+    fecha.textContent = "Sin información";
 
-    selectedView.hidden =
-        false;
+    status.textContent = "SIN DATOS";
 
+    body.innerHTML = `
+      <tr>
+        <td colspan="3">
+          No se pudo cargar el corte corriente.
+        </td>
+      </tr>
+    `;
 
-    // ------------------------------
-    // Renderizar Histórico
-    // ------------------------------
+    return;
+  }
+
+  const periodo = tasasIndice.actual;
+
+  const corte = tasasIndice.cortes.find(
+    item => item.periodo === periodo
+  );
+
+  if (!corte) {
+
+    fecha.textContent = "Sin información";
+
+    status.textContent = "SIN DATOS";
+
+    body.innerHTML = `
+      <tr>
+        <td colspan="3">
+          No se encontró el corte ${periodo}.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  fecha.textContent =
+    `Corte corriente: ${periodo}`;
+
+  status.textContent = "ACTUAL";
+
+  body.innerHTML = `
+    <tr>
+      <td colspan="3">
+        Corte disponible: ${periodo}
+      </td>
+    </tr>
+  `;
+
+  console.log(
+    "RISKLAB T01: corte corriente:",
+    corte
+  );
+}
+
+async function renderTasasHistoryChart() {
+
+  const canvas =
+    $("tasas-history-chart");
+
+  const periodoEl =
+    $("tasas-chart-periodo");
+
+  if (!canvas) {
+    console.warn(
+      "RISKLAB T03: no se encontró el canvas."
+    );
+    return;
+  }
+
+  try {
+
+    const [respuestaNominal, respuestaReal] =
+      await Promise.all([
+
+        fetch("./data/tasas/G00%20-%20P00.csv"),
+
+        fetch("./data/tasas/G00%20-%20P01.csv")
+
+      ]);
+
 
     if (
-        targetView === "historico"
+      !respuestaNominal.ok ||
+      !respuestaReal.ok
     ) {
+      throw new Error(
+        "No se pudieron cargar P00/P01."
+      );
+    }
 
-        renderHistoricoMarketValueChart(
-            historico
+
+    const [csvNominal, csvReal] =
+      await Promise.all([
+
+        respuestaNominal.text(),
+
+        respuestaReal.text()
+
+      ]);
+
+    tasasP00 = csvNominal;
+    tasasP01 = csvReal;
+
+
+    const nominal =
+      csvNominal
+        .trim()
+        .split(/\r?\n/)
+        .map(linea => linea.split(","));
+
+
+    const real =
+      csvReal
+        .trim()
+        .split(/\r?\n/)
+        .map(linea => linea.split(","));
+
+
+    if (
+      nominal.length < 2 ||
+      real.length < 2
+    ) {
+      throw new Error(
+        "P00/P01 no contienen datos suficientes."
+      );
+    }
+
+
+    const encabezadosNominal =
+      nominal[0].map(valor =>
+        valor.trim()
+      );
+
+    const encabezadosReal =
+      real[0].map(valor =>
+        valor.trim()
+      );
+
+
+    const indiceFechaNominal =
+      encabezadosNominal.indexOf("FECHA");
+
+    const indiceFechaReal =
+      encabezadosReal.indexOf("FECHA");
+
+
+    if (
+      indiceFechaNominal === -1 ||
+      indiceFechaReal === -1
+    ) {
+      throw new Error(
+        "No se encontró la columna FECHA."
+      );
+    }
+
+
+    /*
+     * Plazos comunes de P00 y P01.
+     */
+    const plazos = [
+      "30",
+      "90",
+      "180",
+      "360",
+      "1080",
+      "1800",
+      "2520",
+      "3600",
+      "5400",
+      "7200",
+      "9000",
+      "10800"
+    ];
+
+
+    /*
+     * Encontramos la última fecha disponible
+     * en cada archivo.
+     */
+    const fechasNominal =
+      nominal
+        .slice(1)
+        .map(fila =>
+          fila[indiceFechaNominal]?.trim()
+        )
+        .filter(Boolean);
+
+
+    const fechasReal =
+      real
+        .slice(1)
+        .map(fila =>
+          fila[indiceFechaReal]?.trim()
+        )
+        .filter(Boolean);
+
+
+    const ultimaFechaNominal =
+      fechasNominal.sort().at(-1);
+
+    const ultimaFechaReal =
+      fechasReal.sort().at(-1);
+
+
+    /*
+     * Para T03 utilizamos el último corte
+     * común entre ambos archivos.
+     */
+    const fechasComunes =
+      fechasNominal.filter(fecha =>
+        fechasReal.includes(fecha)
+      );
+
+
+    if (!fechasComunes.length) {
+      throw new Error(
+        "No existe una fecha común entre P00 y P01."
+      );
+    }
+
+
+    const ultimaFecha =
+      fechasComunes.sort().at(-1);
+
+
+    /*
+     * Buscar las filas correspondientes
+     * al último corte.
+     */
+    const filaNominal =
+      nominal
+        .slice(1)
+        .find(fila =>
+          fila[indiceFechaNominal]?.trim() ===
+          ultimaFecha
         );
 
+
+    const filaReal =
+      real
+        .slice(1)
+        .find(fila =>
+          fila[indiceFechaReal]?.trim() ===
+          ultimaFecha
+        );
+
+
+    if (!filaNominal || !filaReal) {
+      throw new Error(
+        "No se encontraron las filas del último corte."
+      );
     }
+
+
+    /*
+     * Construimos las posiciones de las
+     * 12 columnas de plazo.
+     */
+    const indicesNominal =
+      plazos.map(plazo =>
+        encabezadosNominal.indexOf(plazo)
+      );
+
+    const indicesReal =
+      plazos.map(plazo =>
+        encabezadosReal.indexOf(plazo)
+      );
+
+
+    if (
+      indicesNominal.some(indice => indice === -1) ||
+      indicesReal.some(indice => indice === -1)
+    ) {
+      throw new Error(
+        "Falta uno o más plazos en P00/P01."
+      );
+    }
+
+
+    /*
+     * Convertimos los valores a porcentaje.
+     *
+     * Los CSV contienen valores decimales:
+     * 0.067443 -> 6.7443%
+     */
+    const valoresNominal =
+      indicesNominal.map(indice => {
+
+        const valor =
+          Number(
+            filaNominal[indice]
+          );
+
+        return Number.isFinite(valor)
+          ? valor * 100
+          : null;
+
+      });
+
+
+    const valoresReal =
+      indicesReal.map(indice => {
+
+        const valor =
+          Number(
+            filaReal[indice]
+          );
+
+        return Number.isFinite(valor)
+          ? valor * 100
+          : null;
+
+      });
+
+
+    /*
+     * Etiqueta del corte.
+     */
+    if (periodoEl) {
+
+      const fecha =
+        new Date(ultimaFecha);
+
+      if (!isNaN(fecha.getTime())) {
+
+        periodoEl.textContent =
+          `Corte: ${fecha.toLocaleDateString(
+            "es-MX",
+            {
+              month: "long",
+              year: "numeric"
+            }
+          )}`;
+
+      } else {
+
+        periodoEl.textContent =
+          `Corte: ${ultimaFecha}`;
+
+      }
+
+    }
+
+
+    /*
+     * Si ya existe un gráfico,
+     * destruirlo antes de crear otro.
+     */
+    if (
+      window.tasasHistoryChart
+    ) {
+
+      window.tasasHistoryChart.destroy();
+
+    }
+
+
+    window.tasasHistoryChart =
+      new Chart(
+        canvas,
+        {
+
+          type: "line",
+
+          data: {
+
+            labels: plazos,
+
+            datasets: [
+
+              {
+
+                label:
+                  "BonosM (Yields)",
+
+                data:
+                  valoresNominal,
+
+                tension: 0.25,
+
+                spanGaps: true
+
+              },
+
+              {
+
+                label:
+                  "RealBruta (Yields)",
+
+                data:
+                  valoresReal,
+
+                tension: 0.25,
+
+                spanGaps: true
+
+              }
+
+            ]
+
+          },
+
+          options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+
+              mode: "index",
+
+              intersect: false
+
+            },
+
+            scales: {
+
+              x: {
+
+                title: {
+
+                  display: true,
+
+                  text: "Plazo (días)"
+
+                }
+
+              },
+
+              y: {
+
+                title: {
+
+                  display: true,
+
+                  text: "Tasa (%)"
+
+                },
+
+                ticks: {
+
+                  callback:
+                    value =>
+                      `${value}%`
+
+                }
+
+              }
+
+            },
+
+            plugins: {
+
+              legend: {
+
+                display: true
+
+              },
+
+              tooltip: {
+
+                callbacks: {
+
+                  label:
+                    context =>
+                      `${context.dataset.label}: ` +
+                      `${Number(
+                        context.raw
+                      ).toFixed(4)}%`
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+
+    console.log(
+      "RISKLAB T03: gráfico generado."
+    );
+
+    console.log(
+      "RISKLAB T03: fecha:",
+      ultimaFecha
+    );
+
+    console.log(
+      "RISKLAB T03: nominal:",
+      valoresNominal
+    );
+
+    console.log(
+      "RISKLAB T03: real:",
+      valoresReal
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "RISKLAB T03:",
+      error
+    );
+
+    if (periodoEl) {
+
+      periodoEl.textContent =
+        "No fue posible cargar el corte.";
+
+    }
+
+  }
 
 }
 
-                        }
+function renderTasasLongTermChart() {
 
-                    }
-                );
+  const canvas =
+    $("tasas-longterm-chart");
 
-            }
+  if (!canvas) {
+    console.warn(
+      "RISKLAB T03: no se encontró el canvas histórico."
+    );
+    return;
+  }
+
+  if (!tasasP00 || !tasasP01) {
+    console.warn(
+      "RISKLAB T03: P00/P01 todavía no están cargados."
+    );
+    return;
+  }
+
+  try {
+
+    /*
+     * -----------------------------------------------------
+     * 1. Nodos históricos
+     * -----------------------------------------------------
+     */
+
+    const nodosHistoricos = [
+      "30",
+      "90",
+      "360",
+      "1800",
+      "5400",
+      "10800"
+    ];
+
+
+    /*
+     * -----------------------------------------------------
+     * 2. Convertir CSV
+     * -----------------------------------------------------
+     */
+
+    const nominal =
+      tasasP00
+        .trim()
+        .split(/\r?\n/)
+        .map(linea =>
+          linea.split(",")
         );
 
+    const real =
+      tasasP01
+        .trim()
+        .split(/\r?\n/)
+        .map(linea =>
+          linea.split(",")
+        );
+
+
+    if (
+      nominal.length < 2 ||
+      real.length < 2
+    ) {
+      throw new Error(
+        "P00/P01 no contienen suficientes registros."
+      );
     }
+
+
+    /*
+     * -----------------------------------------------------
+     * 3. Encabezados
+     * -----------------------------------------------------
+     */
+
+    const encabezadosNominal =
+      nominal[0].map(valor =>
+        valor.trim()
+      );
+
+    const encabezadosReal =
+      real[0].map(valor =>
+        valor.trim()
+      );
+
+
+    const indiceFechaNominal =
+      encabezadosNominal.indexOf("FECHA");
+
+    const indiceFechaReal =
+      encabezadosReal.indexOf("FECHA");
+
+
+    if (
+      indiceFechaNominal === -1 ||
+      indiceFechaReal === -1
+    ) {
+      throw new Error(
+        "No se encontró la columna FECHA."
+      );
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 4. Localizar nodos
+     * -----------------------------------------------------
+     */
+
+    const indicesNominal = {};
+    const indicesReal = {};
+
+
+    nodosHistoricos.forEach(nodo => {
+
+      indicesNominal[nodo] =
+        encabezadosNominal.indexOf(nodo);
+
+      indicesReal[nodo] =
+        encabezadosReal.indexOf(nodo);
+
+    });
+
+
+    const nodosFaltantes =
+      nodosHistoricos.filter(nodo =>
+        indicesNominal[nodo] === -1 ||
+        indicesReal[nodo] === -1
+      );
+
+
+    if (nodosFaltantes.length) {
+
+      throw new Error(
+        `Faltan nodos en P00/P01: ${
+          nodosFaltantes.join(", ")
+        }`
+      );
+
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 5. Mapas por fecha
+     * -----------------------------------------------------
+     */
+
+    const mapaNominal =
+      new Map();
+
+    nominal
+      .slice(1)
+      .forEach(fila => {
+
+        const fecha =
+          fila[indiceFechaNominal]?.trim();
+
+        if (fecha) {
+
+          mapaNominal.set(
+            fecha,
+            fila
+          );
+
+        }
+
+      });
+
+
+    const mapaReal =
+      new Map();
+
+    real
+      .slice(1)
+      .forEach(fila => {
+
+        const fecha =
+          fila[indiceFechaReal]?.trim();
+
+        if (fecha) {
+
+          mapaReal.set(
+            fecha,
+            fila
+          );
+
+        }
+
+      });
+
+
+    /*
+     * -----------------------------------------------------
+     * 6. Fechas comunes
+     * -----------------------------------------------------
+     */
+
+    const fechas =
+  [...mapaNominal.keys()]
+    .filter(fecha =>
+      mapaReal.has(fecha)
+    )
+    .sort((a, b) => {
+
+      const [diaA, mesA, anioA] =
+        a.split("/").map(Number);
+
+      const [diaB, mesB, anioB] =
+        b.split("/").map(Number);
+
+      const fechaA =
+        new Date(
+          anioA,
+          mesA - 1,
+          diaA
+        );
+
+      const fechaB =
+        new Date(
+          anioB,
+          mesB - 1,
+          diaB
+        );
+
+      return fechaA - fechaB;
+
+    });
+
+
+    if (!fechas.length) {
+
+      throw new Error(
+        "No existen fechas comunes entre P00 y P01."
+      );
+
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 7. Últimos 72 cortes
+     * -----------------------------------------------------
+     */
+
+    const fechas72 =
+      fechas.slice(-72);
+
+
+    /*
+     * -----------------------------------------------------
+     * 8. Etiquetas del eje X
+     * -----------------------------------------------------
+     */
+
+    const labels =
+      fechas72.map(fecha => {
+
+        const partes =
+          fecha.split("/");
+
+        if (partes.length === 3) {
+
+          return `${partes[0]}/${partes[1]}/${partes[2]}`;
+
+        }
+
+        return fecha;
+
+      });
+
+
+    /*
+     * -----------------------------------------------------
+     * 9. Crear datasets
+     *
+     * Cada nodo genera DOS datasets:
+     *
+     *   BonosM
+     *   RealBruta
+     *
+     * Los dos quedarán vinculados mediante
+     * el índice del nodo.
+     * -----------------------------------------------------
+     */
+
+    const datasets = [];
+
+
+    nodosHistoricos.forEach((nodo, nodoIndex) => {
+
+      /*
+       * -----------------------------
+       * BonosM
+       * -----------------------------
+       */
+
+      const valoresNominal =
+        fechas72.map(fecha => {
+
+          const fila =
+            mapaNominal.get(fecha);
+
+          if (!fila) {
+            return null;
+          }
+
+          const valor =
+            Number(
+              fila[indicesNominal[nodo]]
+            );
+
+          return Number.isFinite(valor)
+            ? valor * 100
+            : null;
+
+        });
+
+
+      datasets.push({
+
+        label:
+          `BonosM · ${Number(nodo).toLocaleString(
+            "es-MX"
+          )} días`,
+
+        data:
+          valoresNominal,
+
+        tension: 0.2,
+
+        spanGaps: true,
+
+        /*
+         * Solamente 30 días comienza visible.
+         */
+        hidden:
+          nodoIndex !== 0
+
+      });
+
+
+      /*
+       * -----------------------------
+       * RealBruta
+       * -----------------------------
+       */
+
+      const valoresReal =
+        fechas72.map(fecha => {
+
+          const fila =
+            mapaReal.get(fecha);
+
+          if (!fila) {
+            return null;
+          }
+
+          const valor =
+            Number(
+              fila[indicesReal[nodo]]
+            );
+
+          return Number.isFinite(valor)
+            ? valor * 100
+            : null;
+
+        });
+
+
+      datasets.push({
+
+        label:
+          `RealBruta · ${Number(nodo).toLocaleString(
+            "es-MX"
+          )} días`,
+
+        data:
+          valoresReal,
+
+        tension: 0.2,
+
+        spanGaps: true,
+
+        /*
+         * Solamente 30 días comienza visible.
+         */
+        hidden:
+          nodoIndex !== 0
+
+      });
+
+    });
+
+
+    /*
+     * -----------------------------------------------------
+     * 10. Destruir gráfico anterior
+     * -----------------------------------------------------
+     */
+
+    if (
+      window.tasasLongTermChart
+    ) {
+
+      window.tasasLongTermChart.destroy();
+
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 11. Crear gráfico
+     * -----------------------------------------------------
+     */
+
+    window.tasasLongTermChart =
+      new Chart(
+        canvas,
+        {
+
+          type: "line",
+
+          data: {
+
+            labels,
+
+            datasets
+
+          },
+
+          options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+
+              mode: "index",
+
+              intersect: false
+
+            },
+
+            scales: {
+
+              x: {
+
+                title: {
+
+                  display: true,
+
+                  text:
+                    "Cortes mensuales · últimos 72"
+
+                },
+
+                ticks: {
+
+                  autoSkip: true,
+
+                  maxTicksLimit: 12
+
+                }
+
+              },
+
+              y: {
+
+                title: {
+
+                  display: true,
+
+                  text: "Tasa (%)"
+
+                },
+
+                ticks: {
+
+                  callback:
+                    value =>
+                      `${value}%`
+
+                }
+
+              }
+
+            },
+
+            plugins: {
+
+              /*
+               * Ocultamos la leyenda tradicional
+               * de Chart.js.
+               */
+              legend: {
+
+                display: false
+
+              },
+
+              tooltip: {
+
+                callbacks: {
+
+                  label:
+                    context => {
+
+                      if (
+                        context.raw === null ||
+                        context.raw === undefined
+                      ) {
+
+                        return (
+                          `${context.dataset.label}: —`
+                        );
+
+                      }
+
+                      return (
+                        `${context.dataset.label}: ` +
+                        `${Number(
+                          context.raw
+                        ).toFixed(4)}%`
+                      );
+
+                    }
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+
+    /*
+     * -----------------------------------------------------
+     * 12. Crear controles de nodos
+     * -----------------------------------------------------
+     */
+
+    const contenedor =
+      canvas.closest(
+        ".tasas-history-longterm"
+      );
+
+
+    if (!contenedor) {
+
+      console.warn(
+        "RISKLAB T03: no se encontró el contenedor del histórico."
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * Eliminar controles anteriores
+     * para evitar duplicados al volver
+     * a abrir la sección.
+     */
+    const controlesAnteriores =
+      contenedor.querySelector(
+        ".tasas-node-controls"
+      );
+
+
+    if (controlesAnteriores) {
+
+      controlesAnteriores.remove();
+
+    }
+
+
+    /*
+     * Crear nuevo contenedor.
+     */
+    const controles =
+      document.createElement("div");
+
+    controles.className =
+      "tasas-node-controls";
+
+
+    /*
+     * Título de los controles.
+     */
+    const controlesTitulo =
+      document.createElement("div");
+
+    controlesTitulo.className =
+      "tasas-node-controls-title";
+
+    controlesTitulo.textContent =
+      "Nodos";
+
+    controles.appendChild(
+      controlesTitulo
+    );
+
+
+    /*
+     * Botones.
+     */
+    const botones =
+      document.createElement("div");
+
+    botones.className =
+      "tasas-node-buttons";
+
+
+    nodosHistoricos.forEach(
+      (nodo, nodoIndex) => {
+
+        const boton =
+          document.createElement("button");
+
+        boton.type =
+          "button";
+
+        boton.className =
+          "tasas-node-button";
+
+
+        /*
+         * 30 días comienza activo.
+         */
+        if (nodoIndex === 0) {
+
+          boton.classList.add(
+            "active"
+          );
+
+        }
+
+
+        boton.setAttribute(
+          "aria-pressed",
+          String(nodoIndex === 0)
+        );
+
+
+        boton.textContent =
+          `${Number(nodo).toLocaleString(
+            "es-MX"
+          )} días`;
+
+
+        boton.addEventListener(
+          "click",
+          () => {
+
+            const chart =
+              window.tasasLongTermChart;
+
+            if (!chart) {
+              return;
+            }
+
+
+            /*
+             * Estado actual del nodo.
+             */
+            const estaVisible =
+              chart.isDatasetVisible(
+                nodoIndex * 2
+              );
+
+
+            const nuevaVisibilidad =
+              !estaVisible;
+
+
+            /*
+             * Dataset 1:
+             * BonosM
+             */
+            chart.setDatasetVisibility(
+              nodoIndex * 2,
+              nuevaVisibilidad
+            );
+
+
+            /*
+             * Dataset 2:
+             * RealBruta
+             */
+            chart.setDatasetVisibility(
+              nodoIndex * 2 + 1,
+              nuevaVisibilidad
+            );
+
+
+            /*
+             * Estado visual del botón.
+             */
+            boton.classList.toggle(
+              "active",
+              nuevaVisibilidad
+            );
+
+
+            boton.setAttribute(
+              "aria-pressed",
+              String(nuevaVisibilidad)
+            );
+
+
+            chart.update();
+
+          }
+        );
+
+
+        botones.appendChild(
+          boton
+        );
+
+      }
+    );
+
+
+    controles.appendChild(
+      botones
+    );
+
+
+    /*
+     * Insertar los controles justo
+     * antes del gráfico.
+     */
+    const chartWrap =
+      canvas.closest(
+        ".chart-wrap"
+      );
+
+
+    if (chartWrap) {
+
+      chartWrap.parentNode.insertBefore(
+        controles,
+        chartWrap
+      );
+
+    } else {
+
+      contenedor.appendChild(
+        controles
+      );
+
+    }
+
+
+    /*
+     * -----------------------------------------------------
+     * 13. Diagnóstico
+     * -----------------------------------------------------
+     */
+
+    console.log(
+      "RISKLAB T03: histórico generado."
+    );
+
+    console.log(
+      "RISKLAB T03: nodos:",
+      nodosHistoricos
+    );
+
+    console.log(
+      "RISKLAB T03: cortes totales:",
+      fechas.length
+    );
+
+    console.log(
+      "RISKLAB T03: cortes utilizados:",
+      fechas72.length
+    );
+
+    console.log(
+      "RISKLAB T03: primer corte:",
+      fechas72[0]
+    );
+
+    console.log(
+      "RISKLAB T03: último corte:",
+      fechas72[fechas72.length - 1]
+    );
+
+  } catch (error) {
+
+    console.error(
+      "RISKLAB T03 histórico:",
+      error
+    );
+
+  }
+
+}
+function initTasasSelector() {
+
+  const yearSelect = $("tasas-year-select");
+  const corteSelect = $("tasas-corte-select");
+
+  if (!yearSelect || !corteSelect) {
+    console.warn(
+      "RISKLAB TASAS: no se encontraron los selectores de año/corte."
+    );
+    return;
+  }
+
+  if (
+    !tasasIndice ||
+    !Array.isArray(tasasIndice.cortes)
+  ) {
+    console.warn(
+      "RISKLAB TASAS: no hay cortes disponibles."
+    );
+    return;
+  }
+
+  /*
+   * Obtener años únicos a partir del índice.
+   */
+  const years = [
+    ...new Set(
+      tasasIndice.cortes.map(corte =>
+        corte.periodo.substring(0, 4)
+      )
+    )
+  ].sort((a, b) => Number(b) - Number(a));
+
+  /*
+   * Llenar selector de años.
+   */
+  yearSelect.innerHTML = "";
+
+  years.forEach(year => {
+
+    const option =
+      document.createElement("option");
+
+    option.value = year;
+    option.textContent = year;
+
+    yearSelect.appendChild(option);
+
+  });
+
+  /*
+   * Seleccionar inicialmente el año
+   * correspondiente al último corte.
+   */
+  const actualYear =
+    tasasIndice.actual
+      ? tasasIndice.actual.substring(0, 4)
+      : years[0];
+
+  yearSelect.value = actualYear;
+
+  /*
+   * Construir cortes del año seleccionado.
+   */
+  actualizarCortesPorAnio();
+
+  console.log(
+    "RISKLAB TASAS: años disponibles:",
+    years
+  );
+}
+
+function actualizarCortesPorAnio() {
+
+  const yearSelect = $("tasas-year-select");
+  const corteSelect = $("tasas-corte-select");
+
+  if (!yearSelect || !corteSelect) {
+    return;
+  }
+
+  const year = yearSelect.value;
+
+  if (!year) {
+
+    corteSelect.innerHTML =
+      `<option value="">Selecciona un año</option>`;
+
+    corteSelect.disabled = true;
+
+    actualizarLinksTasas();
+
+    return;
+  }
+
+  const cortesDelAnio =
+    tasasIndice.cortes.filter(corte =>
+      corte.periodo.startsWith(`${year}-`)
+    );
+
+  corteSelect.innerHTML = "";
+
+  cortesDelAnio.forEach(corte => {
+
+    const option =
+      document.createElement("option");
+
+    option.value = corte.periodo;
+    option.textContent = corte.periodo;
+
+    corteSelect.appendChild(option);
+
+  });
+
+  corteSelect.disabled =
+    cortesDelAnio.length === 0;
+
+  /*
+   * Si estamos en el año actual,
+   * seleccionar el corte actual.
+   */
+  if (
+    year ===
+    tasasIndice.actual?.substring(0, 4)
+  ) {
+
+    corteSelect.value =
+      tasasIndice.actual;
+
+  } else if (cortesDelAnio.length) {
+
+    /*
+     * Para años históricos seleccionamos
+     * el corte más reciente disponible.
+     */
+    corteSelect.value =
+      cortesDelAnio[0].periodo;
+  }
+
+  actualizarLinksTasas();
+
+  console.log(
+    "RISKLAB TASAS: año:",
+    year,
+    "cortes:",
+    cortesDelAnio.length
+  );
+}
+
+
+
+function initTasasDownloads() {
+
+  const yearSelect = $("tasas-year-select");
+  const corteSelect = $("tasas-corte-select");
+
+  if (!yearSelect || !corteSelect) {
+    return;
+  }
+
+  yearSelect.addEventListener(
+    "change",
+    actualizarCortesPorAnio
+  );
+
+  corteSelect.addEventListener(
+    "change",
+    actualizarLinksTasas
+  );
+
+}
+
+
+
+
+
+async function api(action, params = {}) {
+  if (API_URL.includes("PEGAR_AQUI")) {
+    throw new Error("Configura API_URL en js/app.js con el nuevo deployment de RiskLab.");
+  }
+  const url = new URL(API_URL);
+  url.searchParams.set("action", action);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const response = await fetch(url.toString(), {cache:"no-store"});
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const json = await response.json();
+  if (!json.ok) throw new Error(json.error?.message || "La API devolvió un error.");
+  return json;
+}
+
+async function loadHistory() {
+
+  const response =
+    await api("history", {
+      dias: HISTORY_DAYS
+    });
+
+  historyData =
+    Array.isArray(response.data)
+      ? response.data
+      : [];
+
+
+
+
+
+
+
+
+  
+const pruebaBanorte = historyData.find(registro => {
+
+  const fecha =
+    registro.fechaISO ||
+    registro.fecha ||
+    "";
+
+  return (
+    String(fecha).startsWith("2026-06-09") ||
+    String(fecha).startsWith("09/06/2026")
+  );
+
+});
+
+console.log(
+  "========== RISKLAB BANORTE =========="
 );
+
+console.log(
+  "Registro BANORTE completo:",
+  pruebaBanorte
+);
+
+console.log(
+  "mandatario:",
+  pruebaBanorte?.mandatario
+);
+
+console.log(
+  "valordemercado:",
+  pruebaBanorte?.mandatario?.valordemercado
+);
+
+console.log(
+  "montoinvertido:",
+  pruebaBanorte?.mandatario?.montoinvertido
+);
+
+console.log(
+  "valorenriesgo:",
+  pruebaBanorte?.mandatario?.valorenriesgo
+);
+
+console.log(
+  "volatilidad:",
+  pruebaBanorte?.mandatario?.volatilidad
+);
+
+console.log(
+  "claves valordemercado:",
+  Object.keys(
+    pruebaBanorte?.mandatario?.valordemercado || {}
+  )
+);
+
+console.log(
+  "claves montoinvertido:",
+  Object.keys(
+    pruebaBanorte?.mandatario?.montoinvertido || {}
+  )
+);
+
+console.log(
+  "claves valorenriesgo:",
+  Object.keys(
+    pruebaBanorte?.mandatario?.valorenriesgo || {}
+  )
+);
+
+console.log(
+  "claves volatilidad:",
+  Object.keys(
+    pruebaBanorte?.mandatario?.volatilidad || {}
+  )
+);
+
+
+
+
+  
+
+
+
+  
+  
+
+  renderCharts();
+
+  if (latestData) {
+    renderPortfolios();
+  }
+
+  // IMPORTANTE:
+  // Ahora que historyData ya está cargado,
+  // reconstruimos las tarjetas de mandatarios.
+  if (latestData) {
+    renderMandatarios();
+  }
+}
+
+function renderLatest() {
+  const d = latestData;
+  const completo = d?.portafolio?.completo || {};
+  const restringido = d?.portafolio?.restringido || d?.portafolio?.incompleto || d?.portafolio?.modificado || {};
+  const varActual = pick(completo, ["monto.porcentaje", "var.porcentaje"]);
+  const limite = POLICY_LIMIT_PCT / 100;
+
+  $("kpi-vm").textContent = fmtNumber(completo.valormercadomdp);
+  $("kpi-inversion").textContent = fmtMdp(completo.montoinvertido);
+  $("kpi-var").textContent = fmtPct(varActual);
+  $("kpi-limite").textContent = `${fmtNumber(POLICY_LIMIT_PCT, 2)}%`;
+
+  const util = limite ? (Number(varActual) / Number(limite)) * 100 : null;
+  $("risk-fill").style.width = `${Math.max(0, Math.min(util || 0, 100))}%`;
+  $("risk-utilization").textContent = util == null ? "—" : `${fmtNumber(util,1)}% utilizado`;
+
+  const status = $("var-status");
+  status.textContent = util == null ? "SIN DATO" : (util < 100 ? "DENTRO DE LÍMITE" : "SOBRE LÍMITE");
+  status.style.color = util == null ? "var(--muted)" : (util < 100 ? "var(--green)" : "var(--red)");
+
+  renderPortfolioTable("complete-table", completo);
+  renderPortfolioTable("restricted-table", restringido);
+  renderPortfolios();
+}
+
+
+function obtenerUltimoMandatario(nombre, fechaLimite) {
+
+  if (!Array.isArray(historyData) || !historyData.length) {
+    return null;
+  }
+
+  const fechaObjetivo = new Date(
+    `${fechaLimite}T23:59:59`
+  );
+
+  const registros = historyData
+    .filter(registro => {
+
+      const fecha = new Date(
+        registro.fechaISO || registro.fecha
+      );
+
+      return (
+        !isNaN(fecha.getTime()) &&
+        fecha <= fechaObjetivo
+      );
+    })
+    .sort((a, b) => {
+
+      const fechaA = new Date(
+        a.fechaISO || a.fecha
+      );
+
+      const fechaB = new Date(
+        b.fechaISO || b.fecha
+      );
+
+      return fechaB - fechaA;
+    });
+
+  if (!registros.length) {
+    return null;
+  }
+
+  const registro = registros[0];
+
+  /*
+   * BANORTE puede aparecer en históricos
+   * con la clave "ban" mientras que la
+   * estructura actual utiliza "banorte".
+   *
+   * GBM, BNP y ESCALA mantienen su clave normal.
+   */
+
+  const claves = nombre === "banorte"
+    ? ["banorte", "ban"]
+    : [nombre];
+
+
+  function obtenerCampo(objeto) {
+
+    if (!objeto) {
+      return null;
+    }
+
+    for (const clave of claves) {
+
+      if (
+        objeto[clave] !== undefined &&
+        objeto[clave] !== null
+      ) {
+        return objeto[clave];
+      }
+
+    }
+
+    return null;
+  }
+
+
+  return {
+
+    fecha:
+      registro.fechaISO ||
+      registro.fecha,
+
+    valorMercado:
+      obtenerCampo(
+        registro.mandatario?.valordemercado
+      ),
+
+    montoInvertido:
+      obtenerCampo(
+        registro.mandatario?.montoinvertido
+      ),
+
+    var:
+      obtenerCampo(
+        registro.mandatario?.valorenriesgo
+      ),
+
+    volatilidad:
+      obtenerCampo(
+        registro.mandatario?.volatilidad
+      )
+
+  };
+}
+
+
+function renderMandatarios() {
+
+  const mandatario = latestData?.mandatario || {};
+
+  /*
+   * MANDATARIOS VIGENTES
+   * Estos sí toman el dato de latest.
+   */
+
+  const bnp = {
+    valorMercado:
+      mandatario?.valordemercado?.bnp ?? null,
+
+    montoInvertido:
+      mandatario?.montoinvertido?.bnp ?? null,
+
+    var:
+      mandatario?.valorenriesgo?.bnp ?? null,
+
+    volatilidad:
+      mandatario?.volatilidad?.bnp ?? null,
+
+    fecha: latestData?.fecha
+  };
+
+
+  const escala = {
+    valorMercado:
+      mandatario?.valordemercado?.escala ?? null,
+
+    montoInvertido:
+      mandatario?.montoinvertido?.escala ?? null,
+
+    var:
+      mandatario?.valorenriesgo?.escala ?? null,
+
+    volatilidad:
+      mandatario?.volatilidad?.escala ?? null,
+
+    fecha: latestData?.fecha
+  };
+
+
+  /*
+   * MANDATARIOS LIQUIDADOS
+   *
+   * NO utilizan latest.
+   *
+   * GBM: último registro hasta 15/09/2026
+   * BANORTE: último registro hasta 09/06/2026
+   */
+
+  const gbm =
+    obtenerUltimoMandatario(
+      "gbm",
+      "2026-09-15"
+    );
+
+  const banorte =
+    obtenerUltimoMandatario(
+      "banorte",
+      "2026-06-09"
+    );
+
+
+  const datos = {
+
+    bnp,
+
+    ban: banorte,
+
+    gbm,
+
+    escala
+
+  };
+
+
+  /*
+   * Pintar tarjetas
+   */
+
+  Object.entries(datos).forEach(
+    ([nombre, data]) => {
+
+      const vmEl =
+        $(`mandatario-${nombre}-vm`);
+
+      const inversionEl =
+        $(`mandatario-${nombre}-inversion`);
+
+      const varEl =
+        $(`mandatario-${nombre}-var`);
+
+      const volEl =
+        $(`mandatario-${nombre}-vol`);
+
+
+      /*
+       * Valor de mercado
+       */
+
+      if (vmEl) {
+
+        vmEl.textContent =
+          data?.valorMercado == null
+            ? "—"
+            : `${fmtNumber(
+                data.valorMercado,
+                2
+              )} mdp`;
+
+      }
+
+
+      /*
+       * Monto invertido
+       */
+
+      if (inversionEl) {
+
+        inversionEl.textContent =
+          data?.montoInvertido == null
+            ? "—"
+            : `${fmtNumber(
+                data.montoInvertido,
+                2
+              )} mdp`;
+
+      }
+
+
+      /*
+       * VaR
+       */
+
+      if (varEl) {
+
+        varEl.textContent =
+          data?.var == null
+            ? "—"
+            : fmtPct(
+                data.var,
+                4
+              );
+
+      }
+
+
+      /*
+       * Volatilidad
+       */
+
+      if (volEl) {
+
+        volEl.textContent =
+          data?.volatilidad == null
+            ? "—"
+            : fmtPct(
+                data.volatilidad,
+                2
+              );
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Fecha del último registro
+   *
+   * Para BNP y ESCALA = latest
+   * Para GBM y BANORTE = fecha histórica
+   */
+
+  const fechas = {
+
+    bnp:
+      bnp?.fecha ?? null,
+
+    escala:
+      escala?.fecha ?? null,
+
+    gbm:
+      gbm?.fecha ?? null,
+
+    ban:
+      banorte?.fecha ?? null
+
+  };
+
+
+  /*
+   * Mostrar la fecha en las tarjetas liquidadas.
+   *
+   * Buscamos un elemento:
+   *
+   * mandatario-ban-fecha
+   * mandatario-gbm-fecha
+   *
+   * Si todavía no existen en HTML,
+   * simplemente no hace nada.
+   */
+
+  const fechaBanorte =
+    $("mandatario-ban-fecha");
+
+  const fechaGbm =
+    $("mandatario-gbm-fecha");
+
+
+  if (fechaBanorte) {
+
+    fechaBanorte.textContent =
+      banorte?.fecha
+        ? `Calculado: ${fechaLarga(
+            banorte.fecha
+          )}`
+        : "Sin registro";
+
+  }
+
+
+  if (fechaGbm) {
+
+    fechaGbm.textContent =
+      gbm?.fecha
+        ? `Calculado: ${fechaLarga(
+            gbm.fecha
+          )}`
+        : "Sin registro";
+
+  }
+
+
+  console.log(
+    "RISKLAB mandatarios:",
+    datos
+  );
+
+  console.log(
+    "RISKLAB fechas mandatarios:",
+    fechas
+  );
+}
+
+function initTasasHistoricoToggle() {
+
+  const button =
+    $("tasas-historico-toggle");
+
+  const content =
+    $("tasas-historico-content");
+
+  const arrow =
+    $("tasas-historico-arrow");
+
+  if (!button || !content) {
+    console.warn(
+      "RISKLAB TASAS T02: no se encontró el botón o contenido."
+    );
+    return;
+  }
+
+  button.addEventListener("click", () => {
+
+    const currentlyHidden =
+      content.hidden;
+
+    content.hidden =
+      !currentlyHidden;
+
+    button.setAttribute(
+      "aria-expanded",
+      String(currentlyHidden)
+    );
+
+    if (arrow) {
+
+      arrow.textContent =
+        currentlyHidden
+          ? "▴"
+          : "▾";
+
+    }
+
+  });
+
+}
+
+
+
+function initMandatariosCardToggle() {
+
+  const button = $("mandatarios-history-cards-toggle");
+  const label = $("mandatarios-history-cards-label");
+
+  if (!button || !label) return;
+
+  const cards = document.querySelectorAll(
+    ".mandatario-optional"
+  );
+
+  button.addEventListener("click", () => {
+
+    const currentlyHidden =
+      cards.length > 0 && cards[0].hidden;
+
+    cards.forEach(card => {
+      card.hidden = !currentlyHidden;
+    });
+
+    button.setAttribute(
+      "aria-expanded",
+      String(currentlyHidden)
+    );
+
+    label.textContent =
+      currentlyHidden
+        ? "Ocultar información de mandatarios liquidados"
+        : "Mostrar información de mandatarios liquidados";
+  });
+}
+
+
+function initMandatarioHistoryToggle() {
+
+  const button =
+    $("mandatario-history-toggle");
+
+  const content =
+    $("mandatario-history-content");
+
+  const arrow =
+    $("mandatario-history-arrow");
+
+
+  if (!button || !content) {
+    console.warn(
+      "RISKLAB M06: no se encontró el botón o contenido del histórico."
+    );
+
+    return;
+  }
+
+
+  button.addEventListener("click", () => {
+
+    const currentlyHidden =
+      content.hidden;
+
+
+    /*
+     * Mostrar / ocultar contenido
+     */
+
+    content.hidden =
+      !currentlyHidden;
+
+
+    /*
+     * Actualizar flecha
+     */
+
+    if (arrow) {
+
+      arrow.textContent =
+        currentlyHidden
+          ? "▴"
+          : "▾";
+
+    }
+
+
+    /*
+     * Estado ARIA
+     */
+
+    button.setAttribute(
+      "aria-expanded",
+      String(currentlyHidden)
+    );
+
+
+    /*
+     * El gráfico se crea solamente
+     * cuando el contenedor ya está visible.
+     */
+
+    if (currentlyHidden) {
+
+      requestAnimationFrame(() => {
+
+        console.log(
+          "RISKLAB M06: abriendo histórico de mandatarios"
+        );
+
+        renderMandatarioHistoryChart();
+
+      });
+
+    }
+
+  });
+
+}
+
+
+
+function renderPortfolioTable(id, p) {
+  const rows = [
+    ["Valor de mercado", p.valormercadomdp == null ? null : `${fmtNumber(p.valormercadomdp)} mdp`],
+    ["Volatilidad", p.volatilidad == null ? null : fmtPct(p.volatilidad, 4)],
+    ["Duración", p.duracion == null ? null : `${fmtNumber(p.duracion,4)} años`],
+    ["Convexidad", p.convexidad == null ? null : fmtNumber(p.convexidad,4)],
+    ["Plazo", p.plazo == null ? null : fmtNumber(p.plazo,0)],
+    ["VaR", p.monto?.porcentaje == null ? null : fmtPct(p.monto.porcentaje)],
+    ["VaR individual", p.individual?.porcentaje == null ? null : fmtPct(p.individual.porcentaje)],
+    ["VaR condicional", p.condicional?.porcentaje == null ? null : fmtPct(p.condicional.porcentaje)],
+    ["Límite de política", p.limitePolitica == null ? null : `${fmtNumber(p.limitePolitica)} mdp`]
+  ];
+  $(id).innerHTML = rows.map(([label,value]) =>
+    `<div class="metric-row"><span class="metric-label">${label}</span><span class="metric-value">${value ?? "—"}</span></div>`
+  ).join("");
+}
+
+/* =========================================================
+   PORTAFOLIOS — ADMINISTRACIÓN
+   ========================================================= */
+
+const PORTFOLIO_NAMES = [
+  "alfa",
+  "calce",
+  "liquidez",
+  "operativo"
+];
+
+
+/*
+ * Busca una propiedad utilizando varias rutas posibles.
+ * No altera la información recibida desde la API.
+ */
+function pickPortfolio(obj, paths) {
+
+  for (const path of paths) {
+
+    const parts = path.split(".");
+
+    let value = obj;
+
+    for (const part of parts) {
+      value = value?.[part];
+    }
+
+    if (
+      value !== undefined &&
+      value !== null
+    ) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+
+/*
+ * Obtiene la estructura administrativa
+ * de los cuatro portafolios.
+ *
+ * Se contemplan las variantes que puede producir
+ * el contrato actual sin modificar el backend.
+ */
+function getAdministrativePortfolios() {
+
+  const administrador =
+    latestData?.administrador || {};
+
+  const nombres = [
+    "alfa",
+    "calce",
+    "liquidez",
+    "operativo"
+  ];
+
+  return nombres.reduce((resultado, nombre) => {
+
+    resultado[nombre] = {
+      valorMercado:
+        administrador?.valormercado?.[nombre] ?? null,
+
+      var:
+        administrador?.valorenriesgo?.[nombre] ?? null,
+
+      volatilidad:
+        administrador?.volatilidad?.[nombre] ?? null
+    };
+
+    return resultado;
+
+  }, {});
+}
+
+/*
+ * Renderiza las cuatro tarjetas.
+ */
+function renderPortfolioCards(portfolios) {
+
+  PORTFOLIO_NAMES.forEach(nombre => {
+
+    const p = portfolios[nombre];
+
+    const vm =
+      $(`portfolio-${nombre}-vm`);
+
+    const varEl =
+      $(`portfolio-${nombre}-var`);
+
+    const vol =
+      $(`portfolio-${nombre}-vol`);
+
+
+    if (vm) {
+
+      vm.textContent =
+        p.valorMercado == null
+          ? "—"
+          : fmtNumber(p.valorMercado, 2);
+
+    }
+
+
+    if (varEl) {
+
+      varEl.textContent =
+        p.var == null
+          ? "—"
+          : fmtPct(p.var, 4);
+
+    }
+
+
+    if (vol) {
+
+      vol.textContent =
+        p.volatilidad == null
+          ? "—"
+          : fmtPct(p.volatilidad, 2);
+
+    }
+
+  });
+}
+
+
+/*
+ * Tabla operativa.
+ */
+function renderPortfolioAdministrationTable(
+  portfolios
+) {
+
+  const table =
+    $("portfolio-table");
+
+  if (!table) return;
+
+
+  const fecha =
+    latestData?.fecha ||
+    $("current-date")?.textContent ||
+    "—";
+
+
+  $("portfolio-date").textContent =
+    fecha;
+
+
+  table.innerHTML = `
+
+    <div class="portfolio-table-header">
+
+      <span>Portafolio</span>
+      <span>Valor de mercado</span>
+      <span>Valor en riesgo</span>
+      <span>Volatilidad</span>
+
+    </div>
+
+    ${
+      PORTFOLIO_NAMES.map(nombre => {
+
+        const p =
+          portfolios[nombre];
+
+        const label =
+          nombre.toUpperCase();
+
+        return `
+
+          <div class="portfolio-table-row">
+
+            <span class="portfolio-table-name">
+              ${label}
+            </span>
+
+            <span>
+              ${
+                p.valorMercado == null
+                  ? "—"
+                  : `${fmtNumber(
+                      p.valorMercado,
+                      2
+                    )} mdp`
+              }
+            </span>
+
+            <span>
+              ${
+                p.var == null
+                  ? "—"
+                  : fmtPct(
+                      p.var,
+                      4
+                    )
+              }
+            </span>
+
+            <span>
+              ${
+                p.volatilidad == null
+                  ? "—"
+                  : fmtPct(
+                      p.volatilidad,
+                      2
+                    )
+              }
+            </span>
+
+          </div>
+
+        `;
+
+      }).join("")
+    }
+
+  `;
+}
+
+
+/*
+ * Gráfico comparativo de los cuatro portafolios.
+ *
+ * Importante:
+ * NO utiliza POLICY_LIMIT_PCT.
+ * El objetivo es comparar los portafolios entre sí.
+ */
+function renderPortfolioVarChart(
+  portfolios
+) {
+
+  const canvas =
+    $("portfolio-var-chart");
+
+  if (
+    !canvas ||
+    !window.Chart
+  ) {
+    return;
+  }
+
+
+  const values =
+    PORTFOLIO_NAMES.map(nombre => {
+
+      const value =
+        portfolios[nombre].var;
+
+      return value == null
+        ? null
+        : Number(value) * 100;
+
+    });
+
+
+  if (portfolioCharts.var) {
+    portfolioCharts.var.destroy();
+  }
+
+
+  portfolioCharts.var =
+    new Chart(canvas, {
+
+      type: "bar",
+
+      data: {
+
+        labels: [
+          "ALFA",
+          "CALCE",
+          "LIQUIDEZ",
+          "OPERATIVO"
+        ],
+
+        datasets: [
+
+          {
+            label: "VaR",
+            data: values,
+
+            backgroundColor: [
+              "#4da3ff",
+              "#4fd18b",
+              "#e8bd5c",
+              "#ef6b73"
+            ],
+
+            borderWidth: 0,
+
+            borderRadius: 3,
+
+            maxBarThickness: 46
+          }
+
+        ]
+
+      },
+
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        plugins: {
+
+          legend: {
+            display: false
+          },
+
+          tooltip: {
+
+            backgroundColor: "#0b0f14",
+
+            borderColor: "#202a33",
+
+            borderWidth: 1,
+
+            titleColor: "#e6edf3",
+
+            bodyColor: "#e6edf3",
+
+            callbacks: {
+
+              label: context => {
+
+                const value =
+                  context.raw;
+
+                return value == null
+                  ? "VaR: —"
+                  : `VaR: ${Number(value).toFixed(4)}%`;
+
+              }
+
+            }
+
+          }
+
+        },
+
+
+        scales: {
+
+          x: {
+
+            grid: {
+              display: false
+            },
+
+            ticks: {
+              color: "#84909c",
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 10
+              }
+            }
+
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            grid: {
+              color: "#18212a"
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              callback: value =>
+                `${Number(value).toFixed(2)}%`
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+
+}
+
+function renderPortfolioHistoryChart(history) {
+
+  const canvas =
+    $("portfolio-var-chart");
+
+  if (
+    !canvas ||
+    !window.Chart
+  ) {
+    return;
+  }
+
+  /*
+   * Portafolios utiliza una ventana móvil
+   * de 90 días.
+   *
+   * historyData conserva los 251 días
+   * utilizados por el módulo Histórico.
+   */
+  const registros =
+    Array.isArray(history)
+      ? history.slice(-50) //portafolios aquí se acota la diferencia entre historia data que trae el año bursatil 
+      : [];
+
+  if (!registros.length) {
+    return;
+  }
+
+  const labels =
+    registros.map(registro =>
+      fechaCorta(
+        registro.fechaISO ||
+        registro.fecha
+      )
+    );
+
+  const alfa =
+    registros.map(registro =>
+      Number(
+        registro.administrador
+          ?.valorenriesgo
+          ?.alfa ?? 0
+      ) * 100
+    );
+
+  const calce =
+    registros.map(registro =>
+      Number(
+        registro.administrador
+          ?.valorenriesgo
+          ?.calce ?? 0
+      ) * 100
+    );
+
+  const liquidez =
+    registros.map(registro =>
+      Number(
+        registro.administrador
+          ?.valorenriesgo
+          ?.liquidez ?? 0
+      ) * 100
+    );
+
+  const operativo =
+    registros.map(registro =>
+      Number(
+        registro.administrador
+          ?.valorenriesgo
+          ?.operativo ?? 0
+      ) * 100
+    );
+
+  if (portfolioCharts.var) {
+    portfolioCharts.var.destroy();
+  }
+
+  portfolioCharts.var =
+    new Chart(canvas, {
+
+      type: "line",
+
+      data: {
+
+        labels,
+
+        datasets: [
+
+          {
+            label: "Alfa",
+            data: alfa,
+            borderColor: "#4da3ff",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Calce",
+            data: calce,
+            borderColor: "#4fd18b",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Liquidez",
+            data: liquidez,
+            borderColor: "#e8bd5c",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Operativo",
+            data: operativo,
+            borderColor: "#ef6b73",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          }
+
+        ]
+
+      },
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        interaction: {
+          intersect: false,
+          mode: "index"
+        },
+
+        plugins: {
+
+          legend: {
+            display: true,
+
+            labels: {
+              boxWidth: 10,
+              usePointStyle: true,
+              color: "#84909c",
+              font: {
+                family: "IBM Plex Mono",
+                size: 10
+              }
+            }
+          },
+
+          tooltip: {
+
+            backgroundColor: "#0b0f14",
+
+            borderColor: "#202a33",
+
+            borderWidth: 1,
+
+            titleColor: "#e6edf3",
+
+            bodyColor: "#e6edf3",
+
+            callbacks: {
+
+              label: context => {
+
+                const value =
+                  context.raw;
+
+                return value == null
+                  ? `${context.dataset.label}: —`
+                  : `${context.dataset.label}: ${Number(value).toFixed(4)}%`;
+
+              }
+
+            }
+
+          }
+
+        },
+
+        scales: {
+
+          x: {
+
+            grid: {
+              display: false
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              maxTicksLimit: 10,
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 9
+              }
+
+            }
+
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            grid: {
+              color: "#18212a"
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              callback: value =>
+                `${Number(value).toFixed(2)}%`
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+}
+
+
+function renderMandatarioBnpChart() {
+
+  console.log(
+    "RISKLAB M05: renderMandatarioBnpChart()",
+    {
+      canvas: $("mandatario-bnp-chart"),
+      historyLength: historyData.length,
+      firstRecord: historyData[0],
+      lastRecord: historyData[historyData.length - 1]
+    }
+  );
+
+  const canvas = $("mandatario-bnp-chart");
+  
+  if (
+    !canvas ||
+    !window.Chart ||
+    !historyData.length
+  ) {
+    return;
+  }
+
+  const labels = historyData.map(registro =>
+    fechaCorta(
+      registro.fechaISO ||
+      registro.fecha
+    )
+  );
+
+  /*
+   * BNP SH USD
+   * Benchmark USD utilizado para el mandato BNP.
+   */
+  const bnpShUsd =
+    historyData.map(registro => {
+
+      const value =
+        registro.benchmark
+          ?.GBM
+          ?.usd ?? null;
+
+      return value == null
+        ? null
+        : Number(value) * 100;
+
+    });
+
+
+  /*
+   * BNP SH MXN
+   * VaR del mandato BNP.
+   */
+  const bnpShMxn =
+    historyData.map(registro => {
+
+      const value =
+        registro.mandatario
+          ?.valorenriesgo
+          ?.bnp ?? null;
+
+      return value == null
+        ? null
+        : Number(value) * 100;
+
+    });
+
+
+  /*
+   * BNP BMK MXN
+   * Benchmark MXN.
+   */
+  const bnpBmkMxn =
+    historyData.map(registro => {
+
+      const value =
+        registro.benchmark
+          ?.BNP
+          ?.mxn ?? null;
+
+      return value == null
+        ? null
+        : Number(value) * 100;
+
+    });
+
+
+  /*
+   * BNP BMK USD
+   * Benchmark USD.
+   */
+  const bnpBmkUsd =
+    historyData.map(registro => {
+
+      const value =
+        registro.benchmark
+          ?.BNP
+          ?.usd ?? null;
+
+      return value == null
+        ? null
+        : Number(value) * 100;
+
+    });
+
+
+  /*
+   * Si ya existe un gráfico en este canvas,
+   * se destruye antes de crear el nuevo.
+   */
+  if (window.mandatarioCharts?.bnp) {
+    window.mandatarioCharts.bnp.destroy();
+  }
+
+
+  if (!window.mandatarioCharts) {
+    window.mandatarioCharts = {};
+  }
+
+
+  window.mandatarioCharts.bnp =
+    new Chart(canvas, {
+
+      type: "line",
+
+      data: {
+
+        labels,
+
+        datasets: [
+
+          {
+            label: "BNP (MXN)", //216267899
+            data: bnpShMxn,
+            borderColor: "#4fd18b",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Benchmark BNP (MXN)", //216267899
+            data: bnpBmkMxn,
+            borderColor: "#e8bd5c",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "BNP (USD)", //216267899
+            data: bnpShUsd,
+            borderColor: "#4da3ff",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Benchmark BNP (USD)",
+            data: bnpBmkUsd,
+            borderColor: "#ef6b73",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          }
+          
+        ]
+
+      },
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        interaction: {
+          intersect: false,
+          mode: "index"
+        },
+
+        plugins: {
+
+          legend: {
+            display: true,
+
+            labels: {
+              boxWidth: 10,
+              usePointStyle: true,
+              color: "#84909c",
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 10
+              }
+            }
+          },
+
+          tooltip: {
+
+            backgroundColor: "#0b0f14",
+
+            borderColor: "#202a33",
+
+            borderWidth: 1,
+
+            titleColor: "#e6edf3",
+
+            bodyColor: "#e6edf3",
+
+            callbacks: {
+
+              label: context => {
+
+                const value =
+                  context.raw;
+
+                return value == null
+                  ? `${context.dataset.label}: —`
+                  : `${context.dataset.label}: ${Number(value).toFixed(4)}%`;
+
+              }
+
+            }
+
+          }
+
+        },
+
+        scales: {
+
+          x: {
+
+            grid: {
+              display: false
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              maxTicksLimit: 10,
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 9
+              }
+
+            }
+
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            grid: {
+              color: "#18212a"
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              callback: value =>
+                `${Number(value).toFixed(2)}%`
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+}
+
+
+function renderMandatarioHistoryChart() {
+
+  const canvas = $("mandatario-history-chart");
+
+  if (
+    !canvas ||
+    !window.Chart ||
+    !Array.isArray(historyData) ||
+    !historyData.length
+  ) {
+    return;
+  }
+
+  const registros = historyData
+    .slice()
+    .sort((a, b) => {
+      const fechaA = new Date(
+        a.fechaISO || a.fecha
+      );
+
+      const fechaB = new Date(
+        b.fechaISO || b.fecha
+      );
+
+      return fechaA - fechaB;
+    });
+
+
+  const fechaLiquidacionBan =
+    new Date("2026-06-09T23:59:59");
+
+  const fechaLiquidacionGbm =
+    new Date("2026-09-15T23:59:59");
+
+
+  const labels = registros.map(registro =>
+    fechaCorta(
+      registro.fechaISO ||
+      registro.fecha
+    )
+  );
+
+
+  /*
+   * GBM
+   *
+   * Se muestra solamente hasta
+   * 15/09/2026.
+   */
+
+  const gbm = registros.map(registro => {
+
+    const fecha = new Date(
+      registro.fechaISO ||
+      registro.fecha
+    );
+
+    if (fecha > fechaLiquidacionGbm) {
+      return null;
+    }
+
+    const value =
+      registro.mandatario
+        ?.valorenriesgo
+        ?.gbm ?? null;
+
+    return value == null
+      ? null
+      : Number(value) * 100;
+  });
+
+
+  /*
+   * BANORTE
+   *
+   * Se muestra solamente hasta
+   * 09/06/2026.
+   */
+
+  const ban = registros.map(registro => {
+
+    const fecha = new Date(
+      registro.fechaISO ||
+      registro.fecha
+    );
+
+    if (fecha > fechaLiquidacionBan) {
+      return null;
+    }
+
+    const value =
+      registro.mandatario
+        ?.valorenriesgo
+        ?.banorte ?? null;
+
+    return value == null
+      ? null
+      : Number(value) * 100;
+  });
+
+
+  /*
+   * Benchmark USD
+   *
+   * Corresponde a benchmark.GBM.usd.
+   */
+
+const benchmarkGbm = registros.map(registro => {
+
+  const value =
+    registro.benchmark?.GBM ?? null;
+
+  return value == null
+    ? null
+    : Number(value) * 100;
+});
+
+
+  /*
+   * Destruir gráfico anterior
+   */
+
+  if (window.mandatarioCharts?.history) {
+    window.mandatarioCharts.history.destroy();
+  }
+
+
+  if (!window.mandatarioCharts) {
+    window.mandatarioCharts = {};
+  }
+
+
+  /*
+   * Crear gráfico
+   */
+
+  window.mandatarioCharts.history =
+    new Chart(canvas, {
+
+      type: "line",
+
+      data: {
+
+        labels,
+
+        datasets: [
+
+          {
+            label: "GBM",
+            data: gbm,
+            borderColor: "#4da3ff",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "BAN",
+            data: ban,
+            borderColor: "#4fd18b",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          },
+
+          {
+            label: "Benchmark GBM",
+            data: benchmarkGbm,
+            borderColor: "#e8bd5c",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 1,
+            tension: 0.25
+          }
+
+        ]
+
+      },
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        interaction: {
+          intersect: false,
+          mode: "index"
+        },
+
+        plugins: {
+
+          legend: {
+            display: true,
+
+            labels: {
+              boxWidth: 10,
+              usePointStyle: true,
+              color: "#84909c",
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 10
+              }
+            }
+          },
+
+          tooltip: {
+
+            backgroundColor: "#0b0f14",
+            borderColor: "#202a33",
+            borderWidth: 1,
+
+            titleColor: "#e6edf3",
+            bodyColor: "#e6edf3",
+
+            callbacks: {
+
+              label: context => {
+
+                const value =
+                  context.raw;
+
+                return value == null
+                  ? `${context.dataset.label}: —`
+                  : `${context.dataset.label}: ${Number(value).toFixed(4)}%`;
+              }
+
+            }
+
+          }
+
+        },
+
+        scales: {
+
+          x: {
+
+            grid: {
+              display: false
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              maxTicksLimit: 10,
+
+              font: {
+                family: "IBM Plex Mono",
+                size: 9
+              }
+
+            }
+
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            grid: {
+              color: "#18212a"
+            },
+
+            ticks: {
+
+              color: "#65727f",
+
+              callback: value =>
+                `${Number(value).toFixed(2)}%`
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+}
+
+
+
+
+
+/*
+ * Render principal del módulo.
+ */
+function renderPortfolios() {
+
+  const portfolios =
+    getAdministrativePortfolios();
+
+
+  renderPortfolioCards(
+    portfolios
+  );
+
+
+  renderPortfolioAdministrationTable(
+    portfolios
+  );
+
+
+  renderPortfolioVarChart(
+    portfolios
+  );
+
+}
+
+
+function renderCharts() {
+  if (!window.Chart || !historyData.length) return;
+  const labels = historyData.map(x => fechaCorta(x.fechaISO || x.fecha));
+  const vm = historyData.map(x => x.portafolio?.completo?.valormercadomdp ?? null);
+  const inv = historyData.map(x => (x.portafolio?.completo?.montoinvertido ?? null) / 1000000);
+  const varSeries = historyData.map(x => {
+    const v = x.portafolio?.completo?.monto?.porcentaje;
+    return v == null ? null : Number(v) * 100;
+  });
+  const limit = historyData.map(() => POLICY_LIMIT_PCT);
+
+  const common = {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{intersect:false,mode:"index"},
+    plugins:{legend:{labels:{boxWidth:10,usePointStyle:true,color:"#84909c",font:{size:10}}},
+      tooltip:{backgroundColor:"#0b0f14",borderColor:"#202a33",borderWidth:1,titleColor:"#e6edf3",bodyColor:"#e6edf3"}},
+    scales:{x:{grid:{display:false},ticks:{color:"#65727f",maxTicksLimit:8}},
+      y:{grid:{color:"#18212a"},ticks:{color:"#65727f"}}}
+  };
+
+  if (charts.vm) charts.vm.destroy();
+  charts.vm = new Chart($("chart-vm"), {
+    type:"line", data:{labels,datasets:[
+      {label:"Valor de mercado",data:vm,borderColor:"#4da3ff",backgroundColor:"transparent",borderWidth:2,pointRadius:1,tension:.25},
+      {label:"Monto invertido",data:inv,borderColor:"#4fd18b",backgroundColor:"transparent",borderWidth:2,pointRadius:1,tension:.25}
+    ]},
+    options:{...common,scales:{...common.scales,y:{...common.scales.y,ticks:{...common.scales.y.ticks,callback:v=>Number(v).toLocaleString("es-MX")}}}}
+  });
+
+  if (charts.var) charts.var.destroy();
+  charts.var = new Chart($("chart-var"), {
+    type:"line", data:{labels,datasets:[
+      {label:"VaR portafolio",data:varSeries,borderColor:"#e8bd5c",backgroundColor:"transparent",borderWidth:2,pointRadius:1,tension:.25},
+      {label:"Límite de política",data:limit,borderColor:"#ef6b73",backgroundColor:"transparent",borderWidth:1.5,borderDash:[6,5],pointRadius:0,tension:0}
+    ]},
+    options:{...common,scales:{...common.scales,y:{...common.scales.y,ticks:{...common.scales.y.ticks,callback:v=>`${Number(v).toFixed(2)}%`}}}}
+  });
+}
+
+// ============================================================
+// HISTÓRICO — CONSULTA DE FECHAS
+// ============================================================
+
+async function loadHistoricalDate(fecha) {
+
+  if (!fecha) {
+    throw new Error("No se seleccionó una fecha.");
+  }
+
+  // El input date entrega YYYY-MM-DD.
+  // La API de RiskLab recibe DD/MM/YYYY.
+
+  const partes = fecha.split("-");
+
+  if (partes.length !== 3) {
+    throw new Error("Formato de fecha inválido.");
+  }
+
+  const fechaApi = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+  const response = await api("date", {
+    fecha: fechaApi
+  });
+
+  return response;
+}
+
+
+// ============================================================
+// CONVERSIÓN DE FECHA DEL INPUT
+// ============================================================
+
+function fechaInputDesdeISO(value) {
+
+  if (!value) return "";
+
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+
+// ============================================================
+// COMPARATIVO DE DOS FECHAS
+// ============================================================
+
+async function compareHistoricalDates() {
+
+  const inputA = $("history-date-a");
+  const inputB = $("history-date-b");
+  const status = $("history-status");
+  const button = $("history-compare-btn");
+
+  if (!inputA || !inputB) return;
+
+  const fechaA = inputA.value;
+  const fechaB = inputB.value;
+
+  if (!fechaA || !fechaB) {
+
+    status.textContent =
+      "Selecciona las dos fechas antes de comparar.";
+
+    return;
+  }
+
+  button.disabled = true;
+
+  status.textContent = "Obteniendo información histórica…";
+
+  try {
+
+    const [responseA, responseB] = await Promise.all([
+      loadHistoricalDate(fechaA),
+      loadHistoricalDate(fechaB)
+    ]);
+
+    historicalSnapshotA = responseA;
+    historicalSnapshotB = responseB;
+
+    renderHistoricalComparison(
+      responseA,
+      responseB
+    );
+
+    renderHistoricalCharts(
+      responseA,
+      responseB
+    );
+
+    status.textContent = "Comparativo actualizado.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      `Error: ${error.message}`;
+
+  } finally {
+
+    button.disabled = false;
+  }
+}
+
+
+// ============================================================
+// EXTRACCIÓN DE DATOS
+// ============================================================
+
+function getHistoricalPortfolio(response) {
+
+  return response?.data?.portafolio?.completo || {};
+}
+
+
+// ============================================================
+// TABLA COMPARATIVA
+// ============================================================
+
+function renderHistoricalComparison(
+  responseA,
+  responseB
+) {
+
+  const table = $("history-comparison-table");
+
+  if (!table) return;
+
+  const a = getHistoricalPortfolio(responseA);
+  const b = getHistoricalPortfolio(responseB);
+
+  const fechaA =
+    responseA?.metadata?.fecha ||
+    responseA?.data?.fecha ||
+    "Fecha A";
+
+  const fechaB =
+    responseB?.metadata?.fecha ||
+    responseB?.data?.fecha ||
+    "Fecha B";
+
+  $("history-comparison-date").textContent =
+    `${fechaA} ↔ ${fechaB}`;
+
+  const rows = [
+
+    [
+      "Valor de mercado",
+      a.valormercadomdp,
+      b.valormercadomdp,
+      value => `${fmtNumber(value)} mdp`
+    ],
+
+    [
+      "Volatilidad",
+      a.volatilidad,
+      b.volatilidad,
+      value => fmtPct(value, 4)
+    ],
+
+    [
+      "Duración",
+      a.duracion,
+      b.duracion,
+      value => `${fmtNumber(value, 4)} años`
+    ],
+
+    [
+      "Convexidad",
+      a.convexidad,
+      b.convexidad,
+      value => fmtNumber(value, 4)
+    ],
+
+    [
+      "Plazo",
+      a.plazo,
+      b.plazo,
+      value => fmtNumber(value, 0)
+    ],
+
+    [
+      "VaR",
+      a.monto?.porcentaje,
+      b.monto?.porcentaje,
+      value => fmtPct(value)
+    ],
+
+    [
+      "VaR individual",
+      a.individual?.porcentaje,
+      b.individual?.porcentaje,
+      value => fmtPct(value)
+    ],
+
+    [
+      "VaR condicional",
+      a.condicional?.porcentaje,
+      b.condicional?.porcentaje,
+      value => fmtPct(value)
+    ],
+
+    [
+      "Límite de política",
+      a.limitePolitica,
+      b.limitePolitica,
+      value => `${fmtNumber(value)} mdp`
+    ]
+
+  ];
+
+  table.innerHTML = `
+
+    <div class="history-table-header">
+      <span>Indicador</span>
+      <span>${fechaA}</span>
+      <span>${fechaB}</span>
+      <span>Variación</span>
+    </div>
+
+    ${rows.map(row => {
+
+      const [
+        label,
+        valueA,
+        valueB,
+        formatter
+      ] = row;
+
+      let variation = null;
+
+      if (
+        valueA !== null &&
+        valueA !== undefined &&
+        valueB !== null &&
+        valueB !== undefined &&
+        Number(valueA) !== 0
+      ) {
+
+        variation =
+          ((Number(valueB) - Number(valueA)) /
+            Math.abs(Number(valueA))) * 100;
+      }
+
+      return `
+
+        <div class="history-table-row">
+
+          <span class="metric-label">
+            ${label}
+          </span>
+
+          <span class="metric-value">
+            ${
+              valueA == null
+                ? "—"
+                : formatter(valueA)
+            }
+          </span>
+
+          <span class="metric-value">
+            ${
+              valueB == null
+                ? "—"
+                : formatter(valueB)
+            }
+          </span>
+
+          <span
+  class="metric-value history-variation ${
+    variation == null
+      ? ""
+      : variation > 0
+        ? "positive"
+        : variation < 0
+          ? "negative"
+          : "neutral"
+  }"
+>
+  ${
+    variation == null
+      ? "—"
+      : `${variation > 0 ? "+" : ""}${fmtNumber(variation, 2)}%`
+  }
+</span>
+
+        </div>
+
+      `;
+
+    }).join("")}
+
+  `;
+}
+
+
+// ============================================================
+// GRÁFICOS DEL HISTÓRICO
+// ============================================================
+
+function renderHistoricalCharts(
+  responseA,
+  responseB
+) {
+
+  if (!window.Chart) return;
+
+  const a = getHistoricalPortfolio(responseA);
+  const b = getHistoricalPortfolio(responseB);
+
+  const fechaA =
+    responseA?.metadata?.fecha || "Fecha A";
+
+  const fechaB =
+    responseB?.metadata?.fecha || "Fecha B";
+
+
+  // ==========================================================
+  // DATOS
+  // ==========================================================
+
+  const vmA = Number(a.valormercadomdp);
+  const vmB = Number(b.valormercadomdp);
+
+  const invA =
+    a.montoinvertido != null
+      ? Number(a.montoinvertido) / 1000000
+      : null;
+
+  const invB =
+    b.montoinvertido != null
+      ? Number(b.montoinvertido) / 1000000
+      : null;
+
+  const varA =
+    a.monto?.porcentaje != null
+      ? Number(a.monto.porcentaje) * 100
+      : null;
+
+  const varB =
+    b.monto?.porcentaje != null
+      ? Number(b.monto.porcentaje) * 100
+      : null;
+
+
+  // ==========================================================
+  // VARIACIONES
+  // ==========================================================
+
+  const variacionVM =
+    vmA !== 0
+      ? ((vmB - vmA) / Math.abs(vmA)) * 100
+      : null;
+
+  const variacionInv =
+    invA !== null && invA !== 0 && invB !== null
+      ? ((invB - invA) / Math.abs(invA)) * 100
+      : null;
+
+  const variacionVar =
+    varA !== null && varB !== null
+      ? varB - varA
+      : null;
+
+
+  // ==========================================================
+  // COLORES SEGÚN VARIACIÓN
+  // ==========================================================
+
+  const COLOR_POSITIVO = "#4da3ff";
+  const COLOR_NEGATIVO = "#ef6b73";
+  const COLOR_NEUTRO = "#84909c";
+
+  const colorVariacion = value => {
+
+    if (value == null || value === 0) {
+      return COLOR_NEUTRO;
+    }
+
+    return value > 0
+      ? COLOR_POSITIVO
+      : COLOR_NEGATIVO;
+  };
+
+
+  // ==========================================================
+  // 1. VALOR DE MERCADO + MONTO INVERTIDO
+  // ==========================================================
+
+  if (historyCharts.vm) {
+    historyCharts.vm.destroy();
+  }
+
+  const canvasVM = $("history-chart-vm");
+
+  if (canvasVM) {
+
+    historyCharts.vm = new Chart(
+      canvasVM,
+      {
+        type: "bar",
+
+        data: {
+
+          labels: [
+            fechaA,
+            fechaB
+          ],
+
+          datasets: [
+
+            {
+              label: "Valor de mercado",
+
+              data: [
+                vmA,
+                vmB
+              ],
+
+              borderWidth: 1
+            },
+
+            {
+              label: "Monto invertido",
+
+              data: [
+                invA,
+                invB
+              ],
+
+              borderWidth: 1
+            }
+
+          ]
+
+        },
+
+        options: {
+
+          responsive: true,
+          maintainAspectRatio: false,
+
+          interaction: {
+            intersect: false,
+            mode: "index"
+          },
+
+          plugins: {
+
+            legend: {
+              labels: {
+                boxWidth: 10,
+                usePointStyle: true,
+                color: "#84909c",
+                font: {
+                  size: 10
+                }
+              }
+            },
+
+            tooltip: {
+
+              backgroundColor: "#0b0f14",
+              borderColor: "#202a33",
+              borderWidth: 1,
+
+              titleColor: "#e6edf3",
+              bodyColor: "#e6edf3",
+
+              callbacks: {
+
+                label: function(context) {
+
+                  const value =
+                    Number(context.raw);
+
+                  return context.datasetIndex === 1
+                    ? `${context.dataset.label}: ${fmtNumber(value, 2)} mdp`
+                    : `${context.dataset.label}: ${fmtNumber(value, 2)} mdp`;
+
+                }
+
+              }
+
+            }
+
+          },
+
+          scales: {
+
+            x: {
+
+              grid: {
+                display: false
+              },
+
+              ticks: {
+                color: "#65727f"
+              }
+
+            },
+
+            y: {
+
+              grid: {
+                color: "#18212a"
+              },
+
+              ticks: {
+
+                color: "#65727f",
+
+                callback: value =>
+                  Number(value).toLocaleString("es-MX")
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+    );
+
+  }
+
+
+  // ==========================================================
+  // 2. VAR — BARRA DE UTILIZACIÓN DEL LÍMITE
+  // ==========================================================
+
+  if (historyCharts.var) {
+    historyCharts.var.destroy();
+  }
+
+  const canvasVAR = $("history-chart-var");
+
+  if (canvasVAR) {
+
+    historyCharts.var = new Chart(
+      canvasVAR,
+      {
+        type: "bar",
+
+        data: {
+
+          labels: [
+            fechaA,
+            fechaB
+          ],
+
+          datasets: [
+
+            {
+              label: "Utilización del límite",
+
+              data: [
+                varA !== null
+                  ? (varA / POLICY_LIMIT_PCT) * 100
+                  : null,
+
+                varB !== null
+                  ? (varB / POLICY_LIMIT_PCT) * 100
+                  : null
+              ],
+
+              backgroundColor: [
+                varA !== null
+                  ? colorVariacion(variacionVar)
+                  : COLOR_NEUTRO,
+
+                varB !== null
+                  ? colorVariacion(variacionVar)
+                  : COLOR_NEUTRO
+              ],
+
+              borderWidth: 0,
+
+              borderRadius: 5,
+
+              barPercentage: 0.55,
+
+              categoryPercentage: 0.65
+            }
+
+          ]
+
+        },
+
+        options: {
+
+          responsive: true,
+          maintainAspectRatio: false,
+
+          plugins: {
+
+            legend: {
+              display: false
+            },
+
+            tooltip: {
+
+              backgroundColor: "#0b0f14",
+              borderColor: "#202a33",
+              borderWidth: 1,
+
+              titleColor: "#e6edf3",
+              bodyColor: "#e6edf3",
+
+              callbacks: {
+
+                label: function(context) {
+
+                  const porcentaje =
+                    Number(context.raw);
+
+                  const varReal =
+                    (porcentaje / 100) *
+                    POLICY_LIMIT_PCT;
+
+                  return [
+                    `VaR: ${fmtNumber(varReal, 4)}%`,
+                    `Uso del límite: ${fmtNumber(porcentaje, 1)}%`
+                  ];
+
+                }
+
+              }
+
+            }
+
+          },
+
+          scales: {
+
+            x: {
+
+              grid: {
+                display: false
+              },
+
+              ticks: {
+                color: "#65727f"
+              }
+
+            },
+
+            y: {
+
+              min: 0,
+              max: 100,
+
+              grid: {
+                color: "#18212a"
+              },
+
+              ticks: {
+
+                color: "#65727f",
+
+                callback: value =>
+                  `${Number(value).toFixed(0)}%`
+
+              }
+
+            }
+
+          }
+
+        },
+
+        plugins: [
+
+          {
+
+            id: "historyVarLabels",
+
+            afterDatasetsDraw(chart) {
+
+              const {
+                ctx
+              } = chart;
+
+              const meta =
+                chart.getDatasetMeta(0);
+
+              ctx.save();
+
+              meta.data.forEach(
+                (bar, index) => {
+
+                  const value =
+                    chart.data.datasets[0]
+                      .data[index];
+
+                  if (value == null) return;
+
+                  const varReal =
+                    (Number(value) / 100) *
+                    POLICY_LIMIT_PCT;
+
+                  let texto =
+                    `VaR ${fmtNumber(varReal, 4)}%`;
+
+                  if (variacionVar !== null) {
+
+                    const signo =
+                      variacionVar > 0
+                        ? "+"
+                        : "";
+
+                    texto +=
+                      ` (${signo}${fmtNumber(
+                        variacionVar,
+                        4
+                      )} pp)`;
+                  }
+
+                  ctx.font =
+                    '500 10px "IBM Plex Mono", monospace';
+
+                  ctx.textAlign = "center";
+                  ctx.textBaseline = "bottom";
+
+                  ctx.fillStyle =
+                    colorVariacion(
+                      variacionVar
+                    );
+
+                  ctx.fillText(
+                    texto,
+                    bar.x,
+                    bar.y - 8
+                  );
+
+                }
+              );
+
+              ctx.restore();
+
+            }
+
+          }
+
+        ]
+
+      }
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// INICIALIZACIÓN DEL MÓDULO HISTÓRICO
+// ============================================================
+
+function initHistoricalModule() {
+
+  const button = $("history-compare-btn");
+
+  if (!button) return;
+
+  button.addEventListener(
+    "click",
+    compareHistoricalDates
+  );
+
+}
+
+
+
+// ============================================================
+// FECHAS POR DEFECTO DEL HISTÓRICO
+// ============================================================
+
+function initHistoricalDates() {
+
+  const inputA = $("history-date-a");
+  const inputB = $("history-date-b");
+
+  if (!inputA || !inputB) return;
+
+  // Si ya fueron seleccionadas, no las modificamos.
+  if (inputA.value && inputB.value) return;
+
+  if (!historyData.length) return;
+
+  const first = historyData[0];
+  const last = historyData[historyData.length - 1];
+
+  const fechaFirst =
+    fechaInputDesdeISO(first.fechaISO);
+
+  const fechaLast =
+    fechaInputDesdeISO(last.fechaISO);
+
+  if (!inputA.value) {
+    inputA.value = fechaFirst;
+  }
+
+  if (!inputB.value) {
+    inputB.value = fechaLast;
+  }
+
+}
+
+function renderPortfolios() {
+
+  const administrador =
+    latestData?.administrador || {};
+
+  const portfolios = {
+    alfa: {
+      valorMercado:
+        administrador?.valormercado?.alfa ?? null,
+
+      var:
+        administrador?.valorenriesgo?.alfa ?? null,
+
+      volatilidad:
+        administrador?.volatilidad?.alfa ?? null
+    },
+
+    calce: {
+      valorMercado:
+        administrador?.valormercado?.calce ?? null,
+
+      var:
+        administrador?.valorenriesgo?.calce ?? null,
+
+      volatilidad:
+        administrador?.volatilidad?.calce ?? null
+    },
+
+    liquidez: {
+      valorMercado:
+        administrador?.valormercado?.liquidez ?? null,
+
+      var:
+        administrador?.valorenriesgo?.liquidez ?? null,
+
+      volatilidad:
+        administrador?.volatilidad?.liquidez ?? null
+    },
+
+    operativo: {
+      valorMercado:
+        administrador?.valormercado?.operativo ?? null,
+
+      var:
+        administrador?.valorenriesgo?.operativo ?? null,
+
+      volatilidad:
+        administrador?.volatilidad?.operativo ?? null
+    }
+  };
+
+  const nombres = [
+    "alfa",
+    "calce",
+    "liquidez",
+    "operativo"
+  ];
+
+  nombres.forEach(nombre => {
+
+    const p = portfolios[nombre];
+
+    const vmEl =
+      $(`portfolio-${nombre}-vm`);
+
+    const varEl =
+      $(`portfolio-${nombre}-var`);
+
+    const volEl =
+      $(`portfolio-${nombre}-vol`);
+
+    if (vmEl) {
+      vmEl.textContent =
+        p.valorMercado == null
+          ? "—"
+          : `${fmtNumber(p.valorMercado, 2)} mdp`;
+    }
+
+    if (varEl) {
+      varEl.textContent =
+        p.var == null
+          ? "—"
+          : fmtPct(p.var, 4);
+    }
+
+    if (volEl) {
+      volEl.textContent =
+        p.volatilidad == null
+          ? "—"
+          : fmtPct(p.volatilidad, 2);
+    }
+  });
+
+  renderPortfolioAdministrationTable(portfolios);
+
+  renderPortfolioHistoryChart(historyData);
+}
+
+
+
+/* =========================================================
+   06 · NAVEGACIÓN DE COSECHAS DE CRÉDITO
+   ========================================================= */
+
+function initVintagesModule() {
+  const frame = $("vintage-frame");
+  const currentTitle = $("vintage-current-title");
+  const buttons = document.querySelectorAll(".vintage-button");
+
+  if (!frame || !buttons.length) return;
+
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
+      const archivo = button.dataset.vintage;
+
+      if (!archivo) return;
+
+      // Actualizar botón activo.
+      buttons.forEach(item => {
+        item.classList.remove("active");
+      });
+
+      button.classList.add("active");
+
+      // Actualizar título de la consulta.
+      if (currentTitle) {
+        currentTitle.textContent = button.textContent.trim();
+      }
+
+      // Cargar el HTML correspondiente.
+      frame.src = `./data/vintages/${archivo}`;
+
+      console.log(
+        "RISKLAB M06: consulta seleccionada:",
+        archivo
+      );
+    });
+  });
+}
+
+
+
+
+function initNavigation() {
+
+  
+  const mobileToggle = $("mobile-nav-toggle");
+  const appShell = document.querySelector(".app-shell");
+
+  function setMobileNavigation(open) {
+    if (!mobileToggle || !appShell) return;
+
+    appShell.classList.toggle("mobile-nav-open", open);
+
+    mobileToggle.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+
+    mobileToggle.setAttribute(
+      "aria-label",
+      open
+        ? "Cerrar menú de navegación"
+        : "Abrir menú de navegación"
+    );
+  }
+
+  if (mobileToggle && !mobileToggle.dataset.initialized) {
+    mobileToggle.dataset.initialized = "true";
+
+    mobileToggle.addEventListener("click", () => {
+      const isOpen =
+        mobileToggle.getAttribute("aria-expanded") === "true";
+
+      setMobileNavigation(!isOpen);
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        setMobileNavigation(false);
+      }
+    });
+  }
+
+
+
+  
+
+  document.querySelectorAll(".nav-item").forEach(item => {
+
+    item.addEventListener("click", () => {
+
+
+      setMobileNavigation(false);
+
+      // ------------------------------
+      // 1. Estado de navegación
+      // ------------------------------
+
+      document
+        .querySelectorAll(".nav-item")
+        .forEach(x => x.classList.remove("active"));
+
+      item.classList.add("active");
+
+
+      // ------------------------------
+      // 2. Mostrar vista seleccionada
+      // ------------------------------
+
+      document
+        .querySelectorAll(".view")
+        .forEach(v => {
+          v.hidden = true;
+        });
+
+      const view = $("view-" + item.dataset.view);
+
+      if (view) {
+        view.hidden = false;
+      }
+
+
+      // ------------------------------
+      // 3. Actualizar título
+      // ------------------------------
+
+      const viewTitle = $("view-title");
+
+      if (viewTitle) {
+        viewTitle.textContent =
+          item.textContent
+            .trim()
+            .replace(/^\d+\s*/, "");
+      }
+
+
+      // ------------------------------
+      // 4. Módulo Histórico
+      // ------------------------------
+
+      if (item.dataset.view === "historico") {
+        initHistoricalDates();
+      }
+
+
+      // ------------------------------
+      // 5. Módulo Mandatarios
+      // ------------------------------
+
+      if (item.dataset.view === "mandatarios") {
+
+        requestAnimationFrame(() => {
+
+          console.log(
+            "RISKLAB M05: abriendo Mandatarios"
+          );
+
+          if (
+            Array.isArray(historyData) &&
+            historyData.length > 0 &&
+            $("mandatario-bnp-chart")
+          ) {
+            renderMandatarioBnpChart();
+          } else {
+            console.warn(
+              "RISKLAB M05: el histórico o el canvas todavía no están disponibles.",
+              {
+                registros: Array.isArray(historyData)
+                  ? historyData.length
+                  : "historyData no es un arreglo",
+                canvas: !!$("mandatario-bnp-chart")
+              }
+            );
+          }
+
+        });
+
+      }
+
+
+      // ------------------------------
+      // 6. Módulo Bases de datos / Tasas
+      // ------------------------------
+
+      if (item.dataset.view === "riesgo") {
+
+        requestAnimationFrame(async () => {
+
+          console.log(
+            "RISKLAB T03: abriendo gráficos de tasas"
+          );
+
+          await renderTasasHistoryChart();
+
+          renderTasasLongTermChart();
+
+        });
+
+      }
+
+    });
+
+  });
+
+}
+
+async function init() {
+  initNavigation();
+  initVintagesModule();
+  initHistoricalModule();
+  initMandatariosCardToggle();
+  initMandatarioHistoryToggle();
+  await loadTasasIndice();
+  renderTasasUltimoCorte();
+  initTasasCorteActual();
+  initTasasSelector();
+  initTasasDownloads();
+  initTasasHistoricoToggle();
+  
+  try {
+    await loadLatest();
+    await loadHistory();
+    // Preparar fechas del módulo Histórico
+    initHistoricalDates();
+  } catch (error) {
+    console.error(error);
+    $("api-status").textContent =
+      "API OFFLINE";
+    $("error-box").hidden = false;
+    $("error-box").textContent =
+      `RiskLab: ${error.message}`;
+  }
+}
+
+// La aplicación solo consulta API y datos después de superar el login de demostración.
+window.addEventListener("risklab:authenticated", () => {
+  init().catch(error => {
+    console.error("RISKLAB: error al iniciar la aplicación", error);
+  });
+}, { once: true });
+
+
+
+[
+  ["cartera-lists-k", "k"],
+  ["cartera-lists-l", "l"],
+  ["cartera-lists-h", "h"],
+  ["cartera-lists-i", "i"]
+].forEach(([id]) => {
+  $(id)?.addEventListener("click", event => {
+    const boton = event.target.closest(".cartera-download-group");
+    if (!boton || !$(id).contains(boton)) return;
+
+    descargarGrupoCSV(
+      boton.dataset.exportField,
+      boton.dataset.exportLabel
+    );
+  });
+});
+
+
+async function loadTasasIndice() {
+
+  const response = await fetch(
+    "./data/tasas/indice.json"
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `No se pudo cargar indice.json (${response.status})`
+    );
+  }
+
+  tasasIndice = await response.json();
+
+  console.log(
+    "RISKLAB TASAS: índice cargado",
+    tasasIndice
+  );
+
+  console.log(
+    "RISKLAB TASAS: cortes disponibles:",
+    tasasIndice.cortes?.length || 0
+  );
+
+  return tasasIndice;
+}
+
+
+function initTasasCorteActual() {
+
+  const periodoEl =
+    $("tasas-actual-periodo");
+
+  const linkNominal =
+    $("tasas-download-actual-nominal");
+
+  const linkReal =
+    $("tasas-download-actual-real");
+
+  if (
+    !periodoEl ||
+    !linkNominal ||
+    !linkReal
+  ) {
+    console.warn(
+      "RISKLAB TASAS T01: no se encontraron los elementos."
+    );
+    return;
+  }
+
+  if (
+    !tasasIndice ||
+    !tasasIndice.actual ||
+    !Array.isArray(tasasIndice.cortes)
+  ) {
+    periodoEl.textContent =
+      "Corte no disponible";
+
+    return;
+  }
+
+  const periodo =
+    tasasIndice.actual;
+
+  const corte =
+    tasasIndice.cortes.find(
+      item => item.periodo === periodo
+    );
+
+  if (!corte) {
+
+    periodoEl.textContent =
+      "Corte no disponible";
+
+    return;
+  }
+
+  const [anio, mes] =
+    periodo.split("-");
+
+  const meses = [
+    "",
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ];
+
+  const nombreMes =
+    meses[Number(mes)];
+
+  periodoEl.textContent =
+    `Corte corriente: ${nombreMes} ${anio}`;
+
+  linkNominal.href =
+    `./data/tasas/${corte.nominal}`;
+
+  linkReal.href =
+    `./data/tasas/${corte.real}`;
+
+  linkNominal.setAttribute(
+    "download",
+    ""
+  );
+
+  linkReal.setAttribute(
+    "download",
+    ""
+  );
+
+  console.log(
+    "RISKLAB T01: corte corriente:",
+    periodo
+  );
+
+  console.log(
+    "RISKLAB T01: nominal:",
+    corte.nominal
+  );
+
+  console.log(
+    "RISKLAB T01: real:",
+    corte.real
+  );
+}
+
+
+
+
+async function loadLatest() {
+  const response = await api("latest");
+
+  console.log("RISKLAB latest completo:", response);
+  console.log("RISKLAB latest.data:", response.data);
+  console.log(
+    "RISKLAB claves raíz:",
+    Object.keys(response.data || {})
+  );
+
+  latestData = response.data;
+
+  $("api-status").textContent = "API G00-RIESGOS";
+  $("api-status").classList.add("online");
+
+  $("current-date").textContent =
+    fechaLarga(
+      response.metadata?.fechaISO ||
+      latestData?.fecha
+    );
+
+  renderLatest();
+  renderMandatarios();
+}
+
+
+/* =========================================================
+   IDENTIDAD DEL USUARIO Y PERMISOS DE NAVEGACIÓN
+   ========================================================= */
+
+(() => {
+  "use strict";
+
+  function aplicarPermisosRiskLab(event) {
+    const detalle = event.detail || {};
+    const username = detalle.username || "Usuario";
+    const role = detalle.role || "Perfil de acceso";
+
+    const permisos = {
+      laboratorio: detalle.permissions?.laboratorio === true,
+      captura: detalle.permissions?.captura === true
+    };
+
+    // Mostrar la identidad en la barra superior.
+    const identity = document.getElementById("user-identity");
+    const usernameElement = document.getElementById("user-username");
+    const roleElement = document.getElementById("user-role");
+    const avatar = document.querySelector(".user-avatar");
+
+    if (usernameElement) usernameElement.textContent = username;
+    if (roleElement) roleElement.textContent = role;
+    if (avatar) {
+      avatar.textContent = username.charAt(0).toUpperCase();
+    }
+    if (identity) identity.hidden = false;
+
+    // Mostrar u ocultar cada elemento protegido.
+    document.querySelectorAll("[data-permission]").forEach((element) => {
+      const permiso = element.dataset.permission;
+      element.hidden = permisos[permiso] !== true;
+    });
+
+    // Si el usuario no tiene permisos para una vista,
+    // evitar que permanezca en ella.
+    const vistaActiva = document.querySelector(".nav-item.active");
+
+    if (vistaActiva && vistaActiva.hidden) {
+      const visor = document.querySelector(
+        '.nav-item[data-view="visor"]'
+      );
+
+      visor?.click();
+    }
+  }
+
+  window.addEventListener(
+    "risklab:authenticated",
+    aplicarPermisosRiskLab
+  );
+})();
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("capture-form");
+  const message = document.getElementById("capture-message");
+
+  if (!form || !message) return;
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    if (!form.reportValidity()) return;
+
+    message.textContent =
+      "Validación correcta. La información aún no se ha guardado.";
+  });
+});
+
+
+
+
+/* =====================================================
+   RISKLAB · MÓDULO 07 · CAPTURA DE CARTERA A:M
+   Mantiene la matriz original y agrega filtros y totales.
+   ===================================================== */
+(() => {
+  "use strict";
+
+  function iniciarCapturaCartera() {
+    const $ = (id) => document.getElementById(id);
+    const input = $("cartera-input");
+    const processButton = $("cartera-process");
+
+    if (!input || !processButton || input.dataset.initialized === "true") return;
+    input.dataset.initialized = "true";
+
+    const results = $("cartera-results");
+    const message = $("cartera-message");
+    const collator = new Intl.Collator("es", {
+      sensitivity: "base",
+      numeric: true
+    });
+
+    // Orden de columnas original A:M.
+    const fields = [
+      "a", "b", "c", "d", "e", "f", "g",
+      "h", "i", "j", "k", "l", "m"
+    ];
+
+    const headers = [
+      "INSTRUMENTO", "INICIO PAPEL", "VENC PAPEL", "MOI COMPRA",
+      "TITULOS", "PRECIO", "VALOR EN LIBROS", "TASA",
+      "OPERACION", "TASA PACTADA", "OBSERVACIONES", "PORTAFOLIO", "ID"
+    ];
+
+    let registros = [];
+
+
+    function filasParaListasYDescargas() {
+  const filtros = [
+    ["cartera-filter-k", "k"],
+    ["cartera-filter-l", "l"],
+    ["cartera-filter-h", "h"],
+    ["cartera-filter-i", "i"]
+  ];
+
+  return registros.filter(row => filtros.every(([id, campo]) => {
+    const valorSeleccionado = $(id)?.value || "";
+    return !valorSeleccionado ||
+      (row[campo] || "(Sin dato)") === valorSeleccionado;
+  }));
+}
+
+function escaparCSV(valor) {
+  const texto = String(valor ?? "");
+  return '"' + texto.replace(/"/g, '""') + '"';
+}
+
+function nombreArchivoSeguro(valor) {
+  const nombre = String(valor || "sin-dato")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 70);
+
+  return nombre || "sin-dato";
+}
+
+
+
+function codigoGrupoCSV(campo, etiqueta) {
+  const texto = String(etiqueta ?? "").trim();
+
+  const normalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  // Excepción 1: celdas vacías o "(Sin dato)" en la columna K.
+  // Representan DEUDA.
+  if (campo === "k" && (!normalizado || normalizado === "sindato")) {
+    return "deu";
+  }
+
+  // Excepción 2: la etiqueta histórica MANDATO SAM
+  // corresponde actualmente al administrador BNP.
+  if (normalizado === "mandatosam") {
+    return "bnp";
+  }
+
+  // Regla general: primeras tres letras de la etiqueta.
+  return normalizado.slice(0, 3) || "sin";
+}
+
+
+    
+
+    
+
+function descargarGrupoCSV(campo, etiqueta) {
+  const nombresCampos = {
+    k: "Observaciones",
+    l: "Portafolio",
+    h: "Tasa",
+    i: "Operacion"
+  };
+
+  if (!nombresCampos[campo]) return;
+
+  // Conserva los filtros K/L/H/I activos.
+  // No aplica el filtro individual de instrumento A.
+  const filas = filasParaListasYDescargas();
+
+  // Obtener instrumentos únicos del grupo seleccionado.
+  const instrumentos = [...new Set(
+    filas
+      .filter(row => (row[campo] || "(Sin dato)") === etiqueta)
+      .map(row => row.a)
+      .filter(instrumento => instrumento && instrumento.trim())
+  )]
+    .map(instrumento => instrumento.replace(/_/g, " "))
+    .sort(collator.compare);
+
+  if (!instrumentos.length) {
+    message.textContent =
+      `No hay instrumentos para descargar en el grupo "${etiqueta}".`;
+    return;
+  }
+
+  /*
+   * Estructura de exportación:
+   *
+   * Fila 1: vacía.
+   * Fila 2: A2 = Fecha; B2 = Instrumento.
+   * Fila 3: A3 vacía; instrumentos desde B3 hacia la derecha.
+   * Fila 4: A4 vacía; celdas B4 en adelante reservadas.
+   *
+   * La hoja PRECIO SUCIO se creará en el XLSM de destino.
+   * El CSV no contiene nombres de hojas.
+   */
+
+  const filasCSV = [
+    [""],
+    ["Fecha", "Instrumento"],
+    ["", ...instrumentos],
+    ["", ...instrumentos.map(() => "")]
+  ];
+
+  const contenido = filasCSV
+    .map(fila => fila.map(escaparCSV).join(","))
+    .join("\r\n");
+
+  // BOM UTF-8 para conservar acentos en Excel.
+  const blob = new Blob(["\uFEFF", contenido], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+
+  enlace.href = url;
+  const prefijos = {
+  k: "obs",
+  l: "por",
+  h: "tas",
+  i: "ope"
+};
+
+const codigo = codigoGrupoCSV(campo, etiqueta);
+
+enlace.download =
+  `vector-${prefijos[campo]}-${codigo}_PS.csv`;
+
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+
+  URL.revokeObjectURL(url);
+
+  message.textContent =
+    `CSV PRECIO SUCIO descargado: ${instrumentos.length} instrumento(s) único(s) del grupo "${etiqueta}".`;
+}
+
+window.descargarGrupoCSV = descargarGrupoCSV;
+    
+
+    function escapar(value) {
+      return String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    function normalizar(value) {
+      return String(value ?? "").trim().toLocaleUpperCase("es");
+    }
+
+    function esEncabezado(cells) {
+      return normalizar(cells[0]) === "INSTRUMENTO" ||
+        (normalizar(cells[0]) === "A" &&
+         normalizar(cells[10]) === "K");
+    }
+
+    // Convierte números pegados desde Excel a valores numéricos.
+    // Acepta números simples, separadores de miles y moneda.
+    function numero(value) {
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
+      let s = String(value ?? "").trim();
+      if (!s) return 0;
+
+      s = s.replace(/[$€£\s]/g, "").replace(/[^\d,.\-]/g, "");
+      if (!s || !/\d/.test(s)) return 0;
+
+      const comma = s.lastIndexOf(",");
+      const dot = s.lastIndexOf(".");
+
+      if (comma >= 0 && dot >= 0) {
+        const decimal = comma > dot ? "," : ".";
+        const thousands = decimal === "," ? /\./g : /,/g;
+        s = s.replace(thousands, "");
+        if (decimal === ",") s = s.replace(",", ".");
+      } else if (comma >= 0) {
+        const decimals = s.length - comma - 1;
+        s = decimals > 0 && decimals <= 2
+          ? s.replace(",", ".")
+          : s.replace(/,/g, "");
+      } else if (dot >= 0) {
+        const decimals = s.length - dot - 1;
+        if (decimals === 3) s = s.replace(/\./g, "");
+      }
+
+      const result = Number(s);
+      return Number.isFinite(result) ? result : 0;
+    }
+
+    const moneda = value => value.toLocaleString("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    function agrupar(campo, filas = registros) {
+      const grupos = new Map();
+
+      filas.forEach(row => {
+        const label = row[campo] || "(Sin dato)";
+        if (!grupos.has(label)) grupos.set(label, new Set());
+        if (row.a) grupos.get(label).add(row.a);
+      });
+
+      return [...grupos.entries()].sort((x, y) => collator.compare(x[0], y[0]));
+    }
+
+    function poblarFiltro(id, campo, etiquetaTodos) {
+      const select = $(id);
+      const anterior = select.value;
+      const valores = [...new Set(registros.map(r => r[campo] || "(Sin dato)"))]
+        .sort(collator.compare);
+
+      select.innerHTML = `<option value="">${escapar(etiquetaTodos)}</option>` +
+        valores.map(v => `<option value="${escapar(v)}">${escapar(v)}</option>`).join("");
+
+      if (valores.includes(anterior)) select.value = anterior;
+    }
+
+    function filasFiltradas() {
+      const filtros = [
+        ["cartera-filter-a", "a"],
+        ["cartera-filter-k", "k"],
+        ["cartera-filter-l", "l"],
+        ["cartera-filter-h", "h"],
+        ["cartera-filter-i", "i"]
+      ];
+
+      return registros.filter(row => filtros.every(([id, field]) => {
+        const value = $(id)?.value || "";
+        return !value || (row[field] || "(Sin dato)") === value;
+      }));
+    }
+
+function renderizarListas(id, grupos, campo) {
+  const contenedor = $(id);
+
+  contenedor.innerHTML = grupos.map(([label, values]) => {
+    const lista = [...values].sort(collator.compare);
+
+    return `
+      <section class="cartera-list-group">
+        <div class="cartera-list-heading">
+          <div>
+            <h4>${escapar(label)}</h4>
+            <p class="capture-help">
+              ${lista.length} instrumento(s) único(s)
+            </p>
+          </div>
+          <button
+          type="button"
+          class="btn-secondary cartera-download-group cartera-download-danger"
+          data-export-field="${campo}"
+          data-export-label="${escapar(label)}"
+          aria-label="Descargar instrumentos del grupo ${escapar(label)} en CSV">
+          Vector
+          </button>
+        </div>
+        <ol>${lista.map(v => `<li>${escapar(v)}</li>`).join("")}</ol>
+      </section>`;
+  }).join("") ||
+    '<p class="capture-help">No hay resultados para estos filtros.</p>';
+}
+
+    function renderizar() {
+      const filas = filasFiltradas();
+
+      $("cartera-count-rows").textContent = filas.length;
+      $("cartera-count-instruments").textContent =
+        new Set(filas.map(r => r.a).filter(Boolean)).size;
+      $("cartera-count-l").textContent =
+        new Set(filas.map(r => r.l).filter(Boolean)).size;
+
+      $("cartera-matrix-body").innerHTML = filas.map(row =>
+        `<tr>${fields.map(f => `<td>${escapar(row[f])}</td>`).join("")}</tr>`
+      ).join("");
+
+      
+      
+const filasListas = filasParaListasYDescargas();
+
+// Construir los vectores con los instrumentos únicos.
+const vectoresInstrumentos = {
+  observaciones: agrupar("k", filasListas).map(([grupo, valores]) => ({
+    grupo,
+    instrumentos: [...valores].sort(collator.compare)
+  })),
+
+  portafolios: agrupar("l", filasListas).map(([grupo, valores]) => ({
+    grupo,
+    instrumentos: [...valores].sort(collator.compare)
+  })),
+
+  tasas: agrupar("h", filasListas).map(([grupo, valores]) => ({
+    grupo,
+    instrumentos: [...valores].sort(collator.compare)
+  })),
+
+  operaciones: agrupar("i", filasListas).map(([grupo, valores]) => ({
+    grupo,
+    instrumentos: [...valores].sort(collator.compare)
+  }))
+};
+
+// Exponer los vectores para consulta por otros módulos de RiskLab.
+window.RiskLabCartera = window.RiskLabCartera || {};
+
+window.RiskLabCartera.vectoresInstrumentos = vectoresInstrumentos;
+
+window.RiskLabCartera.consultarVector = function(nombre) {
+  return this.vectoresInstrumentos?.[nombre] || [];
+};
+
+// Las listas visibles siguen usando los mismos vectores.
+renderizarListas(
+  "cartera-lists-k",
+  vectoresInstrumentos.observaciones.map(
+    item => [item.grupo, item.instrumentos]
+  ),
+  "k"
+);
+
+renderizarListas(
+  "cartera-lists-l",
+  vectoresInstrumentos.portafolios.map(
+    item => [item.grupo, item.instrumentos]
+  ),
+  "l"
+);
+
+renderizarListas(
+  "cartera-lists-h",
+  vectoresInstrumentos.tasas.map(
+    item => [item.grupo, item.instrumentos]
+  ),
+  "h"
+);
+
+renderizarListas(
+  "cartera-lists-i",
+  vectoresInstrumentos.operaciones.map(
+    item => [item.grupo, item.instrumentos]
+  ),
+  "i"
+);
+
+
+
+      // Consolidación por instrumento exacto A.
+      const sumas = new Map();
+
+      filas.forEach(row => {
+        if (!row.a) return;
+
+        if (!sumas.has(row.a)) {
+          sumas.set(row.a, { count: 0, market: 0, moi: 0, books: 0 });
+        }
+
+        const item = sumas.get(row.a);
+        item.count += 1;
+        item.market += numero(row.e) * numero(row.f);
+        item.moi += numero(row.d);
+        item.books += numero(row.g);
+      });
+
+      const resumen = [...sumas.entries()].sort((a, b) =>
+        collator.compare(a[0], b[0])
+      );
+
+      $("cartera-summary-body").innerHTML = resumen.map(([instrumento, v]) =>
+        `<tr>
+          <td>${escapar(instrumento)}</td>
+          <td>${v.count}</td>
+          <td>${moneda(v.market)}</td>
+          <td>${moneda(v.moi)}</td>
+          <td>${moneda(v.books)}</td>
+        </tr>`
+      ).join("") || '<tr><td colspan="5">Sin resultados</td></tr>';
+
+      const total = [...sumas.values()].reduce((acc, v) => ({
+        market: acc.market + v.market,
+        moi: acc.moi + v.moi,
+        books: acc.books + v.books
+      }), { market: 0, moi: 0, books: 0 });
+
+      $("cartera-sum-market").textContent = moneda(total.market);
+      $("cartera-sum-moi").textContent = moneda(total.moi);
+      $("cartera-sum-books").textContent = moneda(total.books);
+
+      $("cartera-summary-note").textContent =
+        `${filas.length} filas filtradas. El valor de mercado se calcula por fila como TÍTULOS × PRECIO y después se suma por instrumento.`;
+
+      results.hidden = false;
+    }
+
+    function procesar() {
+      const lineas = input.value.split(/\r?\n/).filter(line => line.trim());
+
+      if (!lineas.length) {
+        results.hidden = true;
+        message.textContent = "Pega la tabla de Excel antes de procesar.";
+        return;
+      }
+
+      let inicio = 0;
+      const primera = lineas[0].split("\t");
+      if (esEncabezado(primera)) inicio = 1;
+
+      const nuevas = [];
+      const errores = [];
+
+      for (let i = inicio; i < lineas.length; i++) {
+        const cells = lineas[i].split("\t");
+
+        // Exigimos las 13 columnas para evitar desfasar B:M.
+        if (cells.length !== 13 || !cells[0].trim()) {
+          errores.push(i + 1);
+          continue;
+        }
+
+        const row = {};
+        fields.forEach((field, index) => {
+          row[field] = cells[index].trim();
+        });
+        nuevas.push(row);
+      }
+
+      if (errores.length || !nuevas.length) {
+        results.hidden = true;
+        message.textContent = errores.length
+          ? `Carga no procesada. Revisa las filas ${errores.join(", ")}: se requieren 13 columnas (A:M) y un instrumento en A.`
+          : "No se encontraron filas de datos válidas debajo del encabezado.";
+        return;
+      }
+
+      registros = nuevas;
+
+      poblarFiltro("cartera-filter-a", "a", "Todos los instrumentos");
+      poblarFiltro("cartera-filter-k", "k", "Todas las observaciones");
+      poblarFiltro("cartera-filter-l", "l", "Todos los portafolios");
+      poblarFiltro("cartera-filter-h", "h", "Todas las tasas");
+      poblarFiltro("cartera-filter-i", "i", "Todas las operaciones");
+
+      renderizar();
+      message.textContent = `Carga correcta: ${registros.length} filas recibidas con 13 columnas.`;
+    }
+
+    processButton.addEventListener("click", procesar);
+
+    ["cartera-filter-a", "cartera-filter-k", "cartera-filter-l",
+     "cartera-filter-h", "cartera-filter-i"].forEach(id => {
+      $(id)?.addEventListener("change", renderizar);
+    });
+
+    $("cartera-reset-filters")?.addEventListener("click", () => {
+      ["cartera-filter-a", "cartera-filter-k", "cartera-filter-l",
+       "cartera-filter-h", "cartera-filter-i"].forEach(id => {
+        if ($(id)) $(id).value = "";
+      });
+      if (registros.length) renderizar();
+    });
+
+    $("cartera-example")?.addEventListener("click", () => {
+      const exampleRows = [
+        ["1_ALSEA_*","MM/DD/AAAA","MM/DD/AAAA","1000","100","10","950","N/A","DIRECTO","8.2","MANDATO BNP PARIBAS","ALFA","1001"],
+        ["1A_ANET_*","MM/DD/AAAA","MM/DD/AAAA","1200","200","12","1100","N/A","DIRECTO","8.8","MANDATO BNP PARIBAS","ALFA","1002"],
+        ["1_ALSEA_*","MM/DD/AAAA","MM/DD/AAAA","500","50","10","480","N/A","DIRECTO","8.1","ACTINVER","ALFA","1003"],
+        ["CD_BANOB_24U","MM/DD/AAAA","MM/DD/AAAA","2500","300","9.5","2400","N/A","DIRECTO","7.4","DEUDA","CALCE","1004"]
+      ];
+      input.value = [headers.join("\t"), ...exampleRows.map(r => r.join("\t"))].join("\n");
+      procesar();
+    });
+
+    $("cartera-clear")?.addEventListener("click", () => {
+      input.value = "";
+      registros = [];
+      results.hidden = true;
+      message.textContent = "Captura limpiada. Aún no se ha procesado información.";
+      input.focus();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", iniciarCapturaCartera, { once: true });
+  } else {
+    iniciarCapturaCartera();
+  }
+})();
+
+
